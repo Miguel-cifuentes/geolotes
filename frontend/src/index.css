@@ -66,3 +66,40 @@ body { margin: 0; }
   .panel { top: auto; bottom: 0; left: 0; right: 0; width: auto; border-radius: 16px 16px 0 0; }
   .leyenda { bottom: auto; top: 16px; }
 }
+/* ---------- Formulario de visita ---------- */
+.modal-fondo {
+  position: fixed; inset: 0; z-index: 10;
+  background: rgba(15, 74, 47, .45);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal {
+  position: relative; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto;
+  background: #fff; border-radius: 16px; padding: 24px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.25);
+}
+.modal h2 { font-family: 'Montserrat', sans-serif; margin: 0 0 16px; }
+
+.campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 13px; font-weight: 500; }
+.campo input, .campo select, .campo textarea {
+  font: 400 15px 'Inter', sans-serif; padding: 10px 12px;
+  border: 1.5px solid #D1D5DB; border-radius: 10px; color: var(--texto);
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus {
+  outline: none; border-color: var(--verde-marca);
+}
+.campo textarea { resize: vertical; }
+.fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--texto-suave); margin: 4px 0 8px; }
+.check input { margin-top: 2px; accent-color: var(--verde-marca); }
+
+.error { color: #B91C1C; font-size: 12px; font-weight: 400; }
+.modal .btn-primario { width: 100%; margin-top: 12px; }
+.btn-primario:disabled { opacity: .6; cursor: wait; }
+
+.exito { text-align: center; }
+.exito p { color: var(--texto-suave); line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .fila { grid-template-columns: 1fr; }
+}

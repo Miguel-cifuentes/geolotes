@@ -1,5 +1,7 @@
 import type { Lote } from '../types/lote';
 import { ESTADOS } from '../config/estados';
+import { useState} from "react";
+import FormularioVisita from './FormularioVisita';
 
 // ⚠️ Cambia por el número del vendedor (57 + celular, sin espacios ni +)
 const WHATSAPP_VENDEDOR = '573112642383';
@@ -19,6 +21,7 @@ export default function PanelLote({ lote, onCerrar }: Props) {
     const estado = ESTADOS[lote.estado];
     const mensaje = `Hola, me interesa el Lote ${lote.numero} de la Manzana ${lote.manzana} que vi en GeoLotes.`;
     const enlaceWhatsapp = `https://wa.me/${WHATSAPP_VENDEDOR}?text=${encodeURIComponent(mensaje)}`;
+    const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
     return (
         <aside className="panel">
@@ -38,7 +41,7 @@ export default function PanelLote({ lote, onCerrar }: Props) {
 
             {lote.estado === 'DISPONIBLE' || lote.estado === 'RESERVADO' ? (
                 <div className="acciones">
-                    <button className="btn-primario" onClick={() => alert('Formulario de visita: próximo paso')}>
+                    <button className="btn-primario" onClick={() => setMostrarFormulario(true)}>
                         Agendar visita
                     </button>
                     <a className="btn-secundario" href={enlaceWhatsapp} target="_blank" rel="noreferrer">
@@ -47,6 +50,9 @@ export default function PanelLote({ lote, onCerrar }: Props) {
                 </div>
             ) : (
                 <p className="no-disponible">Este lote ya no está a la venta.</p>
+            )}
+            {mostrarFormulario && (
+                <FormularioVisita lote={lote} onCerrar={() => setMostrarFormulario(false)} />
             )}
         </aside>
     );
