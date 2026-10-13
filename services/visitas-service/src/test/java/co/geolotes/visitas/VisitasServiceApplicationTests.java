@@ -1,4 +1,4 @@
-package co.geolotes.visitas_service;
+package co.geolotes.visitas;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
