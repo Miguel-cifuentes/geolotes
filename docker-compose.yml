@@ -1,4 +1,16 @@
 services:
+  lotes-db:
+    image: postgis/postgis:16-3.4      # PostgreSQL con la extensión espacial PostGIS
+    container_name: geolotes-lotes-db
+    environment:
+      POSTGRES_DB: lotes_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - lotes-data:/var/lib/postgresql/data
+
   visitas-db:
     image: postgres:16
     container_name: geolotes-visitas-db
@@ -7,9 +19,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"   # 5433 en tu PC, para no chocar con la base de David (5432)
+      - "5433:5432"
     volumes:
       - visitas-data:/var/lib/postgresql/data
 
 volumes:
+  lotes-data:
   visitas-data:
