@@ -1,0 +1,19 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: visitas-service
+  datasource:
+    url: jdbc:postgresql://${VISITAS_DB_HOST:localhost}:${VISITAS_DB_PORT:5433}/visitas_db
+    # Spring no lee el .env; usa estos valores por defecto. Deben coincidir con tu .env
+    username: ${POSTGRES_USER:geolotes}
+    password: ${POSTGRES_PASSWORD:Geolotes2026$}
+  jpa:
+    hibernate:
+      ddl-auto: update   # crea/actualiza las tablas automáticamente (solo para desarrollo)
+    open-in-view: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
