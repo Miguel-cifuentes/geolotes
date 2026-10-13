@@ -1,0 +1,68 @@
+:root {
+  --verde-marca: #0F4A2F;
+  --verde-secundario: #2E7D32;
+  --acento: #A7D26D;
+  --texto: #1F2937;
+  --texto-suave: #6B7280;
+  --fondo-tarjeta: #FFFFFF;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--texto);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+.barra {
+  display: flex; align-items: center; gap: 16px;
+  height: 56px; padding: 0 20px;
+  background: var(--verde-marca); color: #fff;
+}
+.marca { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; }
+.marca b { color: var(--acento); }
+.eslogan { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: .8; }
+
+.contenido { position: relative; flex: 1; }
+/* ".contenido .mapa" tiene más prioridad que ".mapboxgl-map" del CSS de Mapbox */
+.contenido .mapa { position: absolute; inset: 0; }
+
+.leyenda {
+  position: absolute; left: 16px; bottom: 24px;
+  background: var(--fondo-tarjeta); border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15); font-size: 13px;
+}
+.leyenda-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.leyenda-color { width: 14px; height: 14px; border-radius: 4px; }
+
+.panel {
+  position: absolute; top: 16px; right: 60px; width: 320px;
+  background: var(--fondo-tarjeta); border-radius: 16px; padding: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.panel h2 { font-family: 'Montserrat', sans-serif; margin: 0 0 8px; font-size: 28px; }
+.panel-sub { margin: 0; color: var(--texto-suave); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+.panel-cerrar {
+  position: absolute; top: 10px; right: 12px;
+  border: none; background: none; font-size: 24px; cursor: pointer; color: var(--texto-suave);
+}
+.estado { display: inline-block; padding: 4px 10px; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 600; }
+.datos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.datos dt { font-size: 12px; color: var(--texto-suave); }
+.datos dd { margin: 2px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.descripcion { font-size: 14px; line-height: 1.5; color: var(--texto-suave); }
+.acciones { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.btn-primario, .btn-secundario {
+  padding: 12px; border-radius: 10px; font: 600 14px 'Inter', sans-serif;
+  text-align: center; text-decoration: none; cursor: pointer;
+}
+.btn-primario { background: var(--verde-marca); color: #fff; border: none; }
+.btn-secundario { background: #fff; color: var(--verde-marca); border: 1.5px solid var(--verde-marca); }
+.no-disponible { font-size: 14px; color: var(--texto-suave); font-style: italic; }
+
+/* Celular: el panel se vuelve una hoja inferior */
+@media (max-width: 640px) {
+  .eslogan { display: none; }
+  .panel { top: auto; bottom: 0; left: 0; right: 0; width: auto; border-radius: 16px 16px 0 0; }
+  .leyenda { bottom: auto; top: 16px; }
+}
