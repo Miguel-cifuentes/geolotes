@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MapaLotes from './components/MapaLotes';
 import PanelLote from './components/PanelLote';
 import Leyenda from './components/Leyenda';
@@ -15,7 +15,20 @@ export default function App() {
     const rangos = useMemo(() => calcularRangos(lotes), [lotes]);
 
     const [filtros, setFiltros] = useState<Filtros>(() => filtrosIniciales(rangos));
-    const [loteSeleccionado, setLoteSeleccionado] = useState<Lote | null>(null);
+    // Si la dirección trae ?lote=A-3, ese lote arranca seleccionado
+    const [loteSeleccionado, setLoteSeleccionado] = useState<Lote | null>(() => {
+        const id = new URLSearchParams(window.location.search).get('lote')?.toUpperCase();
+        return lotes.features.find((f) => f.properties.id === id)?.properties ?? null;
+    });
+
+    // Mantener la dirección al día: ?lote=A-3 al seleccionar, sin parámetro al cerrar.
+    // replaceState cambia la URL sin recargar la página ni llenar el historial.
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        if (loteSeleccionado) url.searchParams.set('lote', loteSeleccionado.id);
+        else url.searchParams.delete('lote');
+        window.history.replaceState(null, '', url);
+    }, [loteSeleccionado]);
 
     const visibles = lotes.features.filter((f) => cumpleFiltros(f.properties, filtros)).length;
 
