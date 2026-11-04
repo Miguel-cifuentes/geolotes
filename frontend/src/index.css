@@ -152,3 +152,34 @@ body { margin: 0; }
   font: 600 14px 'Inter', sans-serif;
 }
 .btn-compartir:hover { background: #E1EFE7; }
+
+/* ---------- Carga, error y copia guardada ---------- */
+.estado-carga {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 24px; text-align: center;
+  background: #F3F6F4; color: var(--texto);
+}
+.estado-carga h2 { font-family: 'Montserrat', sans-serif; margin: 0; }
+.estado-carga p { margin: 0; color: var(--texto-suave); }
+.estado-carga .btn-primario { padding: 12px 28px; }
+
+.spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 4px solid #D6E4DB; border-top-color: var(--verde-marca);
+  animation: girar .8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+.aviso-copia {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 20px; font-size: 13px;
+  background: #EEF2F1; color: var(--texto); border-bottom: 1px solid #D1D5DB;
+}
+.aviso-copia button {
+  margin-left: auto; flex-shrink: 0; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  border: 1.5px solid var(--verde-marca); background: #fff; color: var(--verde-marca);
+  font: 600 13px 'Inter', sans-serif;
+}
+.aviso-copia button:disabled { opacity: .6; cursor: wait; }

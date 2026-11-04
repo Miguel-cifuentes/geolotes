@@ -1,36 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import MapaLotes from './components/MapaLotes';
-import PanelLote from './components/PanelLote';
-import Leyenda from './components/Leyenda';
-import PanelFiltros from './components/PanelFiltros';
-import { generarLotesEjemplo } from './data/lotesEjemplo';
-import { calcularRangos, cumpleFiltros, filtrosIniciales } from './utils/filtros';
-import type { Lote } from './types/lote';
-import type { Filtros } from './types/filtros';
+import VistaMapa from './components/VistaMapa';
+import { AvisoCopia, Cargando, ErrorCarga } from './components/EstadosCarga';
+import { useLotes } from './hooks/useLotes';
 
 export default function App() {
-    // Una sola fuente de datos para toda la app.
-    // Cuando lotes-service esté listo (#22), esta línea se reemplaza por la carga desde la API.
-    const lotes = useMemo(() => generarLotesEjemplo(), []);
-    const rangos = useMemo(() => calcularRangos(lotes), [lotes]);
-
-    const [filtros, setFiltros] = useState<Filtros>(() => filtrosIniciales(rangos));
-    // Si la dirección trae ?lote=A-3, ese lote arranca seleccionado
-    const [loteSeleccionado, setLoteSeleccionado] = useState<Lote | null>(() => {
-        const id = new URLSearchParams(window.location.search).get('lote')?.toUpperCase();
-        return lotes.features.find((f) => f.properties.id === id)?.properties ?? null;
-    });
-
-    // Mantener la dirección al día: ?lote=A-3 al seleccionar, sin parámetro al cerrar.
-    // replaceState cambia la URL sin recargar la página ni llenar el historial.
-    useEffect(() => {
-        const url = new URL(window.location.href);
-        if (loteSeleccionado) url.searchParams.set('lote', loteSeleccionado.id);
-        else url.searchParams.delete('lote');
-        window.history.replaceState(null, '', url);
-    }, [loteSeleccionado]);
-
-    const visibles = lotes.features.filter((f) => cumpleFiltros(f.properties, filtros)).length;
+    const { estado, lotes, copiaDel, reintentar } = useLotes();
 
     return (
         <div className="app">
@@ -39,24 +12,19 @@ export default function App() {
                 <span className="eslogan">Tu próximo lote está aquí</span>
             </header>
 
+            {/* Aviso entre la barra y el mapa: no tapa los filtros ni la ficha */}
+            {lotes && copiaDel && (
+                <AvisoCopia fecha={copiaDel} reintentando={estado === 'cargando'} onReintentar={reintentar} />
+            )}
+
             <main className="contenido">
-                <MapaLotes
-                    lotes={lotes}
-                    filtros={filtros}
-                    loteSeleccionadoId={loteSeleccionado?.id ?? null}
-                    onSeleccionar={setLoteSeleccionado}
-                />
-                <PanelFiltros
-                    filtros={filtros}
-                    rangos={rangos}
-                    visibles={visibles}
-                    total={lotes.features.length}
-                    onCambiar={setFiltros}
-                    onLimpiar={() => setFiltros(filtrosIniciales(rangos))}
-                />
-                <Leyenda />
-                {loteSeleccionado && (
-                    <PanelLote lote={loteSeleccionado} onCerrar={() => setLoteSeleccionado(null)} />
+                {lotes ? (
+                    // Con datos (nuevos o de la copia) el mapa siempre se muestra
+                    <VistaMapa lotes={lotes} />
+                ) : estado === 'error' ? (
+                    <ErrorCarga onReintentar={reintentar} />
+                ) : (
+                    <Cargando />
                 )}
             </main>
         </div>
