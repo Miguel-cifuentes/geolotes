@@ -3,7 +3,7 @@ import type { EstadoLote, Lote } from '../types/lote';
 
 // ⚠️ Reemplaza con TU punto de Google Maps, en orden [longitud, latitud].
 // Google te da "4.09612, -73.66105" → aquí va [-73.66105, 4.09612]
-export const CENTRO: [number, number] = [-73.666010, 4.081682];
+export const CENTRO: [number, number] = [-73.666351, 4.081971];
 
 // Medidas de cada lote en metros
 const ANCHO_M = 12;

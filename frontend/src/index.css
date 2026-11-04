@@ -103,3 +103,44 @@ body { margin: 0; }
 @media (max-width: 640px) {
   .fila { grid-template-columns: 1fr; }
 }
+/* ---------- Panel de filtros ---------- */
+.filtros {
+  position: absolute; top: 16px; left: 16px; width: 280px; z-index: 2;
+  background: var(--fondo-tarjeta); border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15); overflow: hidden;
+}
+.filtros-cabecera {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 12px 14px; border: none; background: none; cursor: pointer;
+  font: 600 14px 'Inter', sans-serif; color: var(--texto); text-align: left;
+}
+.filtros-contador {
+  margin-left: auto; font-weight: 500; font-size: 12px; color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+.filtros-cuerpo { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+
+.filtro { display: flex; flex-direction: column; gap: 6px; border: none; padding: 0; margin: 0; font-size: 13px; }
+.filtro legend, .filtro-titulo { font-size: 12px; color: var(--texto-suave); padding: 0; margin-bottom: 6px; }
+.filtro-titulo b { color: var(--texto); font-variant-numeric: tabular-nums; }
+.filtro input[type="range"] { accent-color: var(--verde-marca); width: 100%; }
+
+.filtro-estados { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-estado {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid #D1D5DB; background: #fff; color: var(--texto-suave);
+  font: 500 12px 'Inter', sans-serif;
+}
+.chip-estado.activo { border-color: var(--verde-marca); color: var(--texto); background: #F0F7F3; }
+.chip-estado:not(.activo) .chip-color { opacity: .3; }
+.chip-color { width: 10px; height: 10px; border-radius: 3px; }
+
+.filtro-nota { margin: 0; font-size: 12px; color: var(--texto-suave); }
+.filtro-vacio { margin: 0; font-size: 13px; color: #B91C1C; }
+.filtros-limpiar { padding: 8px; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .filtros { top: 12px; left: 12px; right: 60px; width: auto; }
+  .leyenda { top: auto; bottom: 24px; }
+}
