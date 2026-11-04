@@ -2,15 +2,10 @@ import type { Lote } from '../types/lote';
 import { ESTADOS } from '../config/estados';
 import { useState} from "react";
 import FormularioVisita from './FormularioVisita';
+import { formatoPesos } from '../utils/formato';
 
 // ⚠️ Cambia por el número del vendedor (57 + celular, sin espacios ni +)
 const WHATSAPP_VENDEDOR = '573112642383';
-
-const formatoPesos = new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-});
 
 interface Props {
     lote: Lote;

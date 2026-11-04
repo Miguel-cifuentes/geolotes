@@ -1,30 +1,44 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { CENTRO, generarLotesEjemplo } from '../data/lotesEjemplo';
+import type { FeatureCollection, Polygon } from 'geojson';
+import { CENTRO } from '../data/lotesEjemplo';
 import { ESTADOS } from '../config/estados';
+import { expresionFiltros } from '../utils/filtros';
 import type { Lote } from '../types/lote';
+import type { Filtros } from '../types/filtros';
 
-const token = import.meta.env.VITE_MAPBOX_TOKEN;
-if (!token) {
-    console.error('Falta VITE_MAPBOX_TOKEN en el archivo .env de la raíz del proyecto');
-}
-mapboxgl.accessToken = token;
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 interface Props {
+    lotes: FeatureCollection<Polygon, Lote>;
+    filtros: Filtros;
     loteSeleccionadoId: string | null;
     onSeleccionar: (lote: Lote) => void;
 }
 
-export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) {
+// Atenúa los lotes que no cumplen los filtros (no los oculta: el contexto se mantiene)
+function aplicarFiltros(mapa: mapboxgl.Map, filtros: Filtros) {
+    if (!mapa.getLayer('lotes-relleno')) return;
+    const cumple = expresionFiltros(filtros);
+    mapa.setPaintProperty('lotes-relleno', 'fill-opacity', ['case', cumple, 0.6, 0.1]);
+    mapa.setPaintProperty('lotes-borde', 'line-opacity', ['case', cumple, 1, 0.25]);
+    mapa.setPaintProperty('lotes-etiqueta', 'text-opacity', ['case', cumple, 1, 0.3]);
+}
+
+export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSeleccionar }: Props) {
     const contenedorRef = useRef<HTMLDivElement>(null);
     const mapaRef = useRef<mapboxgl.Map | null>(null);
 
-    // Guardamos la función en una ref para que el clic del mapa siempre use la versión actual
+    // Guardamos siempre la versión más reciente de las props para usarla dentro de los eventos del mapa
     const onSeleccionarRef = useRef(onSeleccionar);
+    const lotesRef = useRef(lotes);
+    const filtrosRef = useRef(filtros);
     useEffect(() => {
         onSeleccionarRef.current = onSeleccionar;
-    }, [onSeleccionar]);
+        lotesRef.current = lotes;
+        filtrosRef.current = filtros;
+    });
 
     // 1. Crear el mapa UNA sola vez
     useEffect(() => {
@@ -32,18 +46,16 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
 
         const mapa = new mapboxgl.Map({
             container: contenedorRef.current,
-            style: 'mapbox://styles/mapbox/satellite-streets-v12', // vista satelital con calles
+            style: 'mapbox://styles/mapbox/satellite-streets-v12',
             center: CENTRO,
-            zoom: 17.5,
-            pitch: 55,    // inclinación de la cámara (0 = desde arriba, 85 = casi horizontal)
-            bearing: -15, // rotación
+            zoom: 18.3,
+            pitch: 60,
+            bearing: -15,
         });
         mapaRef.current = mapa;
-
         mapa.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
         mapa.on('load', () => {
-            // Relieve 3D del terreno
             mapa.addSource('terreno', {
                 type: 'raster-dem',
                 url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
@@ -52,10 +64,8 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
             });
             mapa.setTerrain({ source: 'terreno', exaggeration: 1.3 });
 
-            // Fuente de datos: nuestros lotes en GeoJSON
-            mapa.addSource('lotes', { type: 'geojson', data: generarLotesEjemplo() });
+            mapa.addSource('lotes', { type: 'geojson', data: lotesRef.current });
 
-            // Capa 1: relleno con el color según el estado
             mapa.addLayer({
                 id: 'lotes-relleno',
                 type: 'fill',
@@ -66,13 +76,12 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
                         'DISPONIBLE', ESTADOS.DISPONIBLE.color,
                         'RESERVADO', ESTADOS.RESERVADO.color,
                         'VENDIDO', ESTADOS.VENDIDO.color,
-                        ESTADOS.NO_DISPONIBLE.color, // valor por defecto
+                        ESTADOS.NO_DISPONIBLE.color,
                     ],
                     'fill-opacity': 0.6,
                 },
             });
 
-            // Capa 2: borde blanco de cada lote
             mapa.addLayer({
                 id: 'lotes-borde',
                 type: 'line',
@@ -80,7 +89,6 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
                 paint: { 'line-color': '#FFFFFF', 'line-width': 1.5 },
             });
 
-            // Capa 3: resaltado del lote seleccionado (empieza sin mostrar ninguno)
             mapa.addLayer({
                 id: 'lote-seleccionado',
                 type: 'line',
@@ -89,7 +97,6 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
                 paint: { 'line-color': '#38BDF8', 'line-width': 4 },
             });
 
-            // Capa 4: etiqueta "A-1", "B-3"... sobre cada lote
             mapa.addLayer({
                 id: 'lotes-etiqueta',
                 type: 'symbol',
@@ -97,6 +104,7 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
                 layout: {
                     'text-field': ['concat', ['get', 'manzana'], '-', ['to-string', ['get', 'numero']]],
                     'text-size': 14,
+                    'text-allow-overlap': true,
                 },
                 paint: {
                     'text-color': '#FFFFFF',
@@ -105,31 +113,37 @@ export default function MapaLotes({ loteSeleccionadoId, onSeleccionar }: Props) 
                 },
             });
 
-            // Clic en un lote: seleccionarlo y volar la cámara hacia él
+            // Si el usuario movió filtros antes de que el mapa terminara de cargar
+            aplicarFiltros(mapa, filtrosRef.current);
+
             mapa.on('click', 'lotes-relleno', (e) => {
                 const feature = e.features?.[0];
                 if (!feature) return;
                 onSeleccionarRef.current(feature.properties as unknown as Lote);
                 mapa.flyTo({ center: e.lngLat, zoom: 18.5, pitch: 60, duration: 1200 });
             });
-
-            // Cursor de "manito" al pasar sobre un lote
-            mapa.on('mouseenter', 'lotes-relleno', () => {
-                mapa.getCanvas().style.cursor = 'pointer';
-            });
-            mapa.on('mouseleave', 'lotes-relleno', () => {
-                mapa.getCanvas().style.cursor = '';
-            });
+            mapa.on('mouseenter', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = 'pointer'; });
+            mapa.on('mouseleave', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = ''; });
         });
 
-        // Al desmontar el componente, liberar el mapa
         return () => {
             mapa.remove();
             mapaRef.current = null;
         };
     }, []);
 
-    // 2. Cada vez que cambia el lote seleccionado, actualizar el resaltado
+    // 2. Si cambian los lotes (por ejemplo, al llegar de la API), actualizar la fuente
+    useEffect(() => {
+        const fuente = mapaRef.current?.getSource('lotes') as mapboxgl.GeoJSONSource | undefined;
+        fuente?.setData(lotes);
+    }, [lotes]);
+
+    // 3. Si cambian los filtros, atenuar los lotes que no cumplen
+    useEffect(() => {
+        if (mapaRef.current) aplicarFiltros(mapaRef.current, filtros);
+    }, [filtros]);
+
+    // 4. Resaltar el lote seleccionado
     useEffect(() => {
         const mapa = mapaRef.current;
         if (!mapa || !mapa.getLayer('lote-seleccionado')) return;
