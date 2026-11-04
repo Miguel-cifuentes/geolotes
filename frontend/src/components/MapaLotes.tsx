@@ -5,6 +5,7 @@ import type { FeatureCollection, Polygon } from 'geojson';
 import { CENTRO } from '../data/lotesEjemplo';
 import { ESTADOS } from '../config/estados';
 import { expresionFiltros } from '../utils/filtros';
+import { centroLote } from '../utils/geo';
 import type { Lote } from '../types/lote';
 import type { Filtros } from '../types/filtros';
 
@@ -17,7 +18,7 @@ interface Props {
     onSeleccionar: (lote: Lote) => void;
 }
 
-// Atenúa los lotes que no cumplen los filtros (no los oculta: el contexto se mantiene)
+// Atenúa los lotes que no cumplen los filtros
 function aplicarFiltros(mapa: mapboxgl.Map, filtros: Filtros) {
     if (!mapa.getLayer('lotes-relleno')) return;
     const cumple = expresionFiltros(filtros);
@@ -26,18 +27,35 @@ function aplicarFiltros(mapa: mapboxgl.Map, filtros: Filtros) {
     mapa.setPaintProperty('lotes-etiqueta', 'text-opacity', ['case', cumple, 1, 0.3]);
 }
 
+// Resalta el lote seleccionado y lleva la cámara hasta él
+function enfocarLote(
+    mapa: mapboxgl.Map,
+    lotes: FeatureCollection<Polygon, Lote>,
+    id: string | null,
+) {
+    if (!mapa.getLayer('lote-seleccionado')) return;
+    mapa.setFilter('lote-seleccionado', ['==', ['get', 'id'], id ?? '']);
+    if (!id) return;
+    const feature = lotes.features.find((f) => f.properties.id === id);
+    if (feature) {
+        mapa.flyTo({ center: centroLote(feature), zoom: 18.5, pitch: 60, duration: 1200 });
+    }
+}
+
 export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSeleccionar }: Props) {
     const contenedorRef = useRef<HTMLDivElement>(null);
     const mapaRef = useRef<mapboxgl.Map | null>(null);
 
-    // Guardamos siempre la versión más reciente de las props para usarla dentro de los eventos del mapa
+    // Versión más reciente de las props, para usarla dentro de los eventos del mapa
     const onSeleccionarRef = useRef(onSeleccionar);
     const lotesRef = useRef(lotes);
     const filtrosRef = useRef(filtros);
+    const seleccionadoRef = useRef(loteSeleccionadoId);
     useEffect(() => {
         onSeleccionarRef.current = onSeleccionar;
         lotesRef.current = lotes;
         filtrosRef.current = filtros;
+        seleccionadoRef.current = loteSeleccionadoId;
     });
 
     // 1. Crear el mapa UNA sola vez
@@ -113,14 +131,14 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
                 },
             });
 
-            // Si el usuario movió filtros antes de que el mapa terminara de cargar
+            // Lo que haya cambiado mientras el mapa cargaba: filtros y lote del enlace
             aplicarFiltros(mapa, filtrosRef.current);
+            enfocarLote(mapa, lotesRef.current, seleccionadoRef.current);
 
+            // El clic solo avisa qué lote se eligió; el vuelo lo hace enfocarLote
             mapa.on('click', 'lotes-relleno', (e) => {
                 const feature = e.features?.[0];
-                if (!feature) return;
-                onSeleccionarRef.current(feature.properties as unknown as Lote);
-                mapa.flyTo({ center: e.lngLat, zoom: 18.5, pitch: 60, duration: 1200 });
+                if (feature) onSeleccionarRef.current(feature.properties as unknown as Lote);
             });
             mapa.on('mouseenter', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = 'pointer'; });
             mapa.on('mouseleave', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = ''; });
@@ -132,7 +150,7 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
         };
     }, []);
 
-    // 2. Si cambian los lotes (por ejemplo, al llegar de la API), actualizar la fuente
+    // 2. Si cambian los lotes (al llegar de la API), actualizar la fuente
     useEffect(() => {
         const fuente = mapaRef.current?.getSource('lotes') as mapboxgl.GeoJSONSource | undefined;
         fuente?.setData(lotes);
@@ -143,11 +161,9 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
         if (mapaRef.current) aplicarFiltros(mapaRef.current, filtros);
     }, [filtros]);
 
-    // 4. Resaltar el lote seleccionado
+    // 4. Si cambia el lote seleccionado (clic o enlace), resaltarlo y volar hacia él
     useEffect(() => {
-        const mapa = mapaRef.current;
-        if (!mapa || !mapa.getLayer('lote-seleccionado')) return;
-        mapa.setFilter('lote-seleccionado', ['==', ['get', 'id'], loteSeleccionadoId ?? '']);
+        if (mapaRef.current) enfocarLote(mapaRef.current, lotesRef.current, loteSeleccionadoId);
     }, [loteSeleccionadoId]);
 
     return <div ref={contenedorRef} className="mapa" />;

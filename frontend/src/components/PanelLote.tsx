@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import type { Lote } from '../types/lote';
 import { ESTADOS } from '../config/estados';
-import { useState} from "react";
-import FormularioVisita from './FormularioVisita';
 import { formatoPesos } from '../utils/formato';
+import FormularioVisita from './FormularioVisita';
 
-// ⚠️ Cambia por el número del vendedor (57 + celular, sin espacios ni +)
+// ⚠️ Número del vendedor (57 + celular, sin espacios ni +)
 const WHATSAPP_VENDEDOR = '573112642383';
 
 interface Props {
@@ -13,10 +13,34 @@ interface Props {
 }
 
 export default function PanelLote({ lote, onCerrar }: Props) {
-    const estado = ESTADOS[lote.estado];
-    const mensaje = `Hola, me interesa el Lote ${lote.numero} de la Manzana ${lote.manzana} que vi en GeoLotes.`;
-    const enlaceWhatsapp = `https://wa.me/${WHATSAPP_VENDEDOR}?text=${encodeURIComponent(mensaje)}`;
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
+    const [copiado, setCopiado] = useState(false);
+
+    const estado = ESTADOS[lote.estado];
+    const enlace = `${window.location.origin}${window.location.pathname}?lote=${lote.id}`;
+    const mensaje = `Hola, me interesa el Lote ${lote.numero} de la Manzana ${lote.manzana} que vi en GeoLotes: ${enlace}`;
+    const enlaceWhatsapp = `https://wa.me/${WHATSAPP_VENDEDOR}?text=${encodeURIComponent(mensaje)}`;
+
+    async function compartir() {
+        const datos = {
+            title: `GeoLotes · Lote ${lote.manzana}-${lote.numero}`,
+            text: `Mira este lote: ${lote.areaM2} m², ${formatoPesos.format(lote.precio)}`,
+            url: enlace,
+        };
+        // Celular: abre el menú de compartir del teléfono (WhatsApp, correo, etc.)
+        if (navigator.share) {
+            try {
+                await navigator.share(datos);
+            } catch {
+                // El usuario cerró el menú sin compartir: no es un error
+            }
+            return;
+        }
+        // Computador: copia el enlace al portapapeles
+        await navigator.clipboard.writeText(enlace);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2000);
+    }
 
     return (
         <aside className="panel">
@@ -46,6 +70,11 @@ export default function PanelLote({ lote, onCerrar }: Props) {
             ) : (
                 <p className="no-disponible">Este lote ya no está a la venta.</p>
             )}
+
+            <button className="btn-compartir" onClick={compartir} aria-live="polite">
+                {copiado ? '✓ Enlace copiado' : 'Compartir lote'}
+            </button>
+
             {mostrarFormulario && (
                 <FormularioVisita lote={lote} onCerrar={() => setMostrarFormulario(false)} />
             )}

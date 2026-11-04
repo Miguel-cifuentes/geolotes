@@ -144,3 +144,11 @@ body { margin: 0; }
   .filtros { top: 12px; left: 12px; right: 60px; width: auto; }
   .leyenda { top: auto; bottom: 24px; }
 }
+/* ---------- Compartir lote ---------- */
+.btn-compartir {
+  width: 100%; margin-top: 10px; padding: 10px;
+  border: none; border-radius: 10px; cursor: pointer;
+  background: #F0F7F3; color: var(--verde-marca);
+  font: 600 14px 'Inter', sans-serif;
+}
+.btn-compartir:hover { background: #E1EFE7; }
