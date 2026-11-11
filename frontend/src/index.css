@@ -183,3 +183,11 @@ body { margin: 0; }
   font: 600 13px 'Inter', sans-serif;
 }
 .aviso-copia button:disabled { opacity: .6; cursor: wait; }
+/* Panel del vendedor (?vendedor) */
+.vendedor { margin-top: 20px; padding-top: 16px; border-top: 1px dashed #DCE3DE; display: flex; flex-direction: column; gap: 8px; }
+.vendedor h3 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--verde-marca); }
+.vendedor label { font-size: 13px; color: var(--texto-suave); }
+.vendedor select { padding: 10px; border-radius: 8px; border: 1px solid #DCE3DE; font: inherit; }
+.vendedor .btn-primario:disabled { cursor: not-allowed; }
+.vendedor-msg { margin: 0; font-size: 14px; min-height: 20px; }
+.vendedor-msg.error { color: #B91C1C; }

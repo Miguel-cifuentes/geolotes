@@ -3,7 +3,7 @@ import { AvisoCopia, Cargando, ErrorCarga } from './components/EstadosCarga';
 import { useLotes } from './hooks/useLotes';
 
 export default function App() {
-    const { estado, lotes, copiaDel, reintentar } = useLotes();
+    const { estado, lotes, copiaDel, reintentar, actualizarLote } = useLotes();
 
     return (
         <div className="app">
@@ -20,7 +20,7 @@ export default function App() {
             <main className="contenido">
                 {lotes ? (
                     // Con datos (nuevos o de la copia) el mapa siempre se muestra
-                    <VistaMapa lotes={lotes} />
+                    <VistaMapa lotes={lotes} onLoteActualizado={actualizarLote} />
                 ) : estado === 'error' ? (
                     <ErrorCarga onReintentar={reintentar} />
                 ) : (

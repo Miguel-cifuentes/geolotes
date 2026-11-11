@@ -3,16 +3,19 @@ import type { Lote } from '../types/lote';
 import { ESTADOS } from '../config/estados';
 import { formatoPesos } from '../utils/formato';
 import FormularioVisita from './FormularioVisita';
+import CambioEstado from './CambioEstado';
 
 // ⚠️ Número del vendedor (57 + celular, sin espacios ni +)
 const WHATSAPP_VENDEDOR = '573112642383';
 
 interface Props {
     lote: Lote;
+    modoVendedor: boolean;
+    onEstadoCambiado: (lote: Lote) => void;
     onCerrar: () => void;
 }
 
-export default function PanelLote({ lote, onCerrar }: Props) {
+export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerrar }: Props) {
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [copiado, setCopiado] = useState(false);
 
@@ -74,6 +77,11 @@ export default function PanelLote({ lote, onCerrar }: Props) {
             <button className="btn-compartir" onClick={compartir} aria-live="polite">
                 {copiado ? '✓ Enlace copiado' : 'Compartir lote'}
             </button>
+
+            {/* Solo con ?vendedor. key: al cambiar de lote, el selector se reinicia */}
+            {modoVendedor && (
+                <CambioEstado key={lote.id} lote={lote} onCambiado={onEstadoCambiado} />
+            )}
 
             {mostrarFormulario && (
                 <FormularioVisita lote={lote} onCerrar={() => setMostrarFormulario(false)} />

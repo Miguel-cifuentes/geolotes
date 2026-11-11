@@ -10,9 +10,10 @@ import type { Filtros } from '../types/filtros';
 
 interface Props {
     lotes: FeatureCollection<Polygon, Lote>;
+    onLoteActualizado: (lote: Lote) => void;
 }
 
-export default function VistaMapa({ lotes }: Props) {
+export default function VistaMapa({ lotes, onLoteActualizado }: Props) {
     const rangos = useMemo(() => calcularRangos(lotes), [lotes]);
     const [filtros, setFiltros] = useState<Filtros>(() => filtrosIniciales(rangos));
 
@@ -21,6 +22,14 @@ export default function VistaMapa({ lotes }: Props) {
         const id = new URLSearchParams(window.location.search).get('lote')?.toUpperCase();
         return lotes.features.find((f) => f.properties.id === id)?.properties ?? null;
     });
+
+    // ?vendedor en la dirección muestra el panel para cambiar estados (el login llega en el corte 3)
+    const [modoVendedor] = useState(() => new URLSearchParams(window.location.search).has('vendedor'));
+
+    function estadoCambiado(actualizado: Lote) {
+        onLoteActualizado(actualizado);    // recolorea el mapa
+        setLoteSeleccionado(actualizado);  // refresca la ficha abierta
+    }
 
     // Mantener la dirección al día sin recargar la página
     useEffect(() => {
@@ -50,7 +59,12 @@ export default function VistaMapa({ lotes }: Props) {
             />
             <Leyenda />
             {loteSeleccionado && (
-                <PanelLote lote={loteSeleccionado} onCerrar={() => setLoteSeleccionado(null)} />
+                <PanelLote
+                    lote={loteSeleccionado}
+                    modoVendedor={modoVendedor}
+                    onEstadoCambiado={estadoCambiado}
+                    onCerrar={() => setLoteSeleccionado(null)}
+                />
             )}
         </>
     );
