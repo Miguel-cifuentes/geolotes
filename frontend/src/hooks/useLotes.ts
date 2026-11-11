@@ -76,5 +76,21 @@ export function useLotes() {
         setIntento((n) => n + 1);
     }, []);
 
-    return { estado, lotes, copiaDel, reintentar };
+    // Reemplaza un lote ya confirmado por el servidor y refresca la copia local.
+    // Así el mapa cambia de color sin volver a pedir todos los lotes.
+    const actualizarLote = useCallback((actualizado: Lote) => {
+        setLotes((actuales) => {
+            if (!actuales) return actuales;
+            const nuevos: Coleccion = {
+                ...actuales,
+                features: actuales.features.map((f) =>
+                    f.properties.id === actualizado.id ? { ...f, properties: actualizado } : f,
+                ),
+            };
+            guardarCache(nuevos);
+            return nuevos;
+        });
+    }, []);
+
+    return { estado, lotes, copiaDel, reintentar, actualizarLote };
 }
