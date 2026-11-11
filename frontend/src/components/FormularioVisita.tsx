@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Lote } from '../types/lote';
 import type { SolicitudVisita } from '../types/visita';
-import { enviarSolicitudVisita } from '../services/visitasApi';
+import { enviarSolicitudVisita, ErrorValidacion } from '../services/visitasApi';
 
 type Errores = Partial<Record<keyof SolicitudVisita, string>>;
 type EstadoEnvio = 'editando' | 'enviando' | 'exito' | 'error';
@@ -68,7 +68,11 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
         try {
             await enviarSolicitudVisita(datos);
             setEstado('exito');
-        } catch {
+        } catch (error) {
+            if (error instanceof ErrorValidacion) {
+                setErrores(error.errores);
+                setEstado('editando');
+            }
             setEstado('error');
         }
     }
