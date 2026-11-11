@@ -1,0 +1,23 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: lotes-service
+  datasource:
+    url: jdbc:postgresql://${LOTES_DB_HOST:localhost}:${LOTES_DB_PORT:5434}/lotes_db
+    # Spring no lee el .env; estos valores por defecto deben coincidir con tu .env
+    username: ${POSTGRES_USER:geolotes}
+    password: ${POSTGRES_PASSWORD:geolotes123}
+  jpa:
+    hibernate:
+      ddl-auto: none   # la tabla la crea schema.sql (Hibernate no maneja columnas geometry)
+    open-in-view: false
+  sql:
+    init:
+      mode: always     # ejecuta schema.sql y data.sql en cada arranque
+      encoding: UTF-8
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
