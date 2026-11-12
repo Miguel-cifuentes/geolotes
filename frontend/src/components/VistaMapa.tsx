@@ -57,7 +57,7 @@ export default function VistaMapa({ lotes, onLoteActualizado }: Props) {
                 onCambiar={setFiltros}
                 onLimpiar={() => setFiltros(filtrosIniciales(rangos))}
             />
-            <Leyenda />
+            <Leyenda lotes={lotes} />
             {loteSeleccionado && (
                 <PanelLote
                     lote={loteSeleccionado}
