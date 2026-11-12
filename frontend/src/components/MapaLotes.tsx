@@ -11,11 +11,43 @@ import type { Filtros } from '../types/filtros';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+/*
+ * Fondo satelital.
+ * - 'esri' (por defecto): imagen de Esri World Imagery sobre el mapa de calles de Mapbox.
+ *   No depende del límite de teselas satelitales de la cuenta de Mapbox.
+ * - 'mapbox': el satelital propio de Mapbox (VITE_SATELITE=mapbox en el .env).
+ */
+const SATELITE_MAPBOX = import.meta.env.VITE_SATELITE === 'mapbox';
+const ESTILO_MAPA = SATELITE_MAPBOX
+    ? 'mapbox://styles/mapbox/satellite-streets-v12'
+    : 'mapbox://styles/mapbox/streets-v12';
+
+// Recuadro de ~2 km alrededor del proyecto: fuera de él no se piden teselas
+const MARGEN = 0.01; // grados (≈ 1,1 km)
+const LIMITES: [[number, number], [number, number]] = [
+    [CENTRO[0] - MARGEN, CENTRO[1] - MARGEN],
+    [CENTRO[0] + MARGEN, CENTRO[1] + MARGEN],
+];
+
 interface Props {
     lotes: FeatureCollection<Polygon, Lote>;
     filtros: Filtros;
     loteSeleccionadoId: string | null;
     onSeleccionar: (lote: Lote) => void;
+}
+
+// Pone la imagen satelital de Esri debajo de los nombres de calles y lugares
+function agregarSateliteEsri(mapa: mapboxgl.Map) {
+    mapa.addSource('satelite-esri', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: 'Imágenes: Esri, Maxar, Earthstar Geographics y la comunidad de usuarios GIS',
+    });
+    // La primera capa de texto del estilo: la imagen va justo antes, para que las etiquetas queden encima
+    const primeraEtiqueta = mapa.getStyle()?.layers?.find((capa) => capa.type === 'symbol')?.id;
+    mapa.addLayer({ id: 'satelite-esri', type: 'raster', source: 'satelite-esri' }, primeraEtiqueta);
 }
 
 // Atenúa los lotes que no cumplen los filtros
@@ -38,7 +70,7 @@ function enfocarLote(
     if (!id) return;
     const feature = lotes.features.find((f) => f.properties.id === id);
     if (feature) {
-        mapa.flyTo({ center: centroLote(feature), zoom: 18.5, pitch: 60, duration: 1200 });
+        mapa.flyTo({ center: centroLote(feature), zoom: 18, pitch: 60, duration: 1200 });
     }
 }
 
@@ -64,16 +96,22 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
 
         const mapa = new mapboxgl.Map({
             container: contenedorRef.current,
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',
+            style: ESTILO_MAPA,
             center: CENTRO,
-            zoom: 18.3,
+            zoom: 18,
             pitch: 60,
             bearing: -15,
+            minZoom: 15,
+            maxZoom: 19.5,
+            maxPitch: 60,
+            maxBounds: LIMITES,
         });
         mapaRef.current = mapa;
         mapa.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
         mapa.on('load', () => {
+            if (!SATELITE_MAPBOX) agregarSateliteEsri(mapa);
+
             mapa.addSource('terreno', {
                 type: 'raster-dem',
                 url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
