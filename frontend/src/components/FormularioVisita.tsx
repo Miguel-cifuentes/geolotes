@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type { Lote } from '../types/lote';
 import type { SolicitudVisita } from '../types/visita';
 import { enviarSolicitudVisita, ErrorValidacion } from '../services/visitasApi';
@@ -82,7 +83,8 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
         }
     }
 
-    return (
+    // Portal: el formulario se dibuja directamente en <body>, por encima del encabezado y de la ficha
+    return createPortal(
         <div className="modal-fondo" onClick={onCerrar}>
             {/* stopPropagation: un clic dentro del formulario no debe cerrarlo */}
             <div
@@ -198,7 +200,14 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                             />
                             <span>
                                 Autorizo el tratamiento de mis datos personales para ser contactado sobre este lote,
-                                conforme a la Ley 1581 de 2012.
+                                conforme a la{' '}
+                                <a
+                                    href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Ley 1581 de 2012
+                                </a>.
                             </span>
                         </label>
                         {errores.aceptaTratamientoDatos && (
@@ -218,6 +227,7 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                     </form>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
