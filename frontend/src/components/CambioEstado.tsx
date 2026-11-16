@@ -11,6 +11,7 @@ interface Props {
 }
 
 /*
+ * Cambio rápido de estado.
  * Decisión CAP (CP): el mapa solo cambia cuando lotes-service confirma el cambio.
  * Si falla o hay conflicto, se muestra el error y el color queda como estaba.
  */
@@ -39,32 +40,33 @@ export default function CambioEstado({ lote, onCambiado }: Props) {
     const hayError = envio === 'conflicto' || envio === 'error';
 
     return (
-        <section className="vendedor">
-            <h3>Panel del vendedor</h3>
+        <div className="vendedor-estado">
             <label htmlFor="nuevo-estado">Estado del lote</label>
-            <select
-                id="nuevo-estado"
-                value={nuevo}
-                disabled={envio === 'guardando'}
-                onChange={(e) => {
-                    setNuevo(e.target.value as EstadoLote);
-                    setEnvio('quieto');
-                }}
-            >
-                {(Object.keys(ESTADOS) as EstadoLote[]).map((e) => (
-                    <option key={e} value={e}>{ESTADOS[e].etiqueta}</option>
-                ))}
-            </select>
-            <button
-                className="btn-primario"
-                onClick={guardar}
-                disabled={nuevo === lote.estado || envio === 'guardando'}
-            >
-                {envio === 'guardando' ? 'Guardando…' : 'Guardar estado'}
-            </button>
+            <div className="vendedor-estado-fila">
+                <select
+                    id="nuevo-estado"
+                    value={nuevo}
+                    disabled={envio === 'guardando'}
+                    onChange={(e) => {
+                        setNuevo(e.target.value as EstadoLote);
+                        setEnvio('quieto');
+                    }}
+                >
+                    {(Object.keys(ESTADOS) as EstadoLote[]).map((e) => (
+                        <option key={e} value={e}>{ESTADOS[e].etiqueta}</option>
+                    ))}
+                </select>
+                <button
+                    className="btn-primario btn-pequeno"
+                    onClick={guardar}
+                    disabled={nuevo === lote.estado || envio === 'guardando'}
+                >
+                    {envio === 'guardando' ? 'Guardando…' : 'Guardar'}
+                </button>
+            </div>
             <p className={`vendedor-msg${hayError ? ' error' : ''}`} aria-live="polite">
                 {mensajes[envio]}
             </p>
-        </section>
+        </div>
     );
 }

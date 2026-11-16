@@ -1,35 +1,48 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FeatureCollection, Polygon } from 'geojson';
 import MapaLotes from './MapaLotes';
+import type { Dibujo } from './MapaLotes';
 import PanelLote from './PanelLote';
 import Leyenda from './Leyenda';
 import PanelFiltros from './PanelFiltros';
+import HerramientasVendedor from './HerramientasVendedor';
+import FormularioLote from './FormularioLote';
+import type { ModoFormulario } from './FormularioLote';
 import { calcularRangos, cumpleFiltros, filtrosIniciales } from '../utils/filtros';
-import type { Lote } from '../types/lote';
+import { esquinasLote } from '../utils/geo';
+import { actualizarForma, ErrorApi } from '../services/lotesApi';
+import type { Lote, Punto } from '../types/lote';
 import type { Filtros } from '../types/filtros';
 
+type Coleccion = FeatureCollection<Polygon, Lote>;
+
 interface Props {
-    lotes: FeatureCollection<Polygon, Lote>;
+    lotes: Coleccion;
     onLoteActualizado: (lote: Lote) => void;
+    onRecargar: () => Promise<Coleccion>;
 }
 
-export default function VistaMapa({ lotes, onLoteActualizado }: Props) {
+// Lo que el vendedor está dibujando: un lote nuevo, o la forma de uno existente (loteId)
+type Edicion = Dibujo & { loteId?: string };
+
+export default function VistaMapa({ lotes, onLoteActualizado, onRecargar }: Props) {
     const rangos = useMemo(() => calcularRangos(lotes), [lotes]);
     const [filtros, setFiltros] = useState<Filtros>(() => filtrosIniciales(rangos));
 
+    // Se guarda solo el id: el lote siempre se lee de los datos más recientes
     // Si la dirección trae ?lote=A-3, ese lote arranca seleccionado
-    const [loteSeleccionado, setLoteSeleccionado] = useState<Lote | null>(() => {
-        const id = new URLSearchParams(window.location.search).get('lote')?.toUpperCase();
-        return lotes.features.find((f) => f.properties.id === id)?.properties ?? null;
-    });
+    const [seleccionId, setSeleccionId] = useState<string | null>(
+        () => new URLSearchParams(window.location.search).get('lote')?.toUpperCase() ?? null,
+    );
+    const loteSeleccionado = lotes.features.find((f) => f.properties.id === seleccionId)?.properties ?? null;
 
-    // ?vendedor en la dirección muestra el panel para cambiar estados (el login llega en el corte 3)
+    // ?vendedor en la dirección muestra las herramientas del vendedor (el login llega en el corte 3)
     const [modoVendedor] = useState(() => new URLSearchParams(window.location.search).has('vendedor'));
 
-    function estadoCambiado(actualizado: Lote) {
-        onLoteActualizado(actualizado);    // recolorea el mapa
-        setLoteSeleccionado(actualizado);  // refresca la ficha abierta
-    }
+    const [edicion, setEdicion] = useState<Edicion | null>(null);
+    const [formulario, setFormulario] = useState<ModoFormulario | null>(null);
+    const [guardandoForma, setGuardandoForma] = useState(false);
+    const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
 
     // Mantener la dirección al día sin recargar la página
     useEffect(() => {
@@ -41,13 +54,90 @@ export default function VistaMapa({ lotes, onLoteActualizado }: Props) {
 
     const visibles = lotes.features.filter((f) => cumpleFiltros(f.properties, filtros)).length;
 
+    // Tras crear, ajustar o eliminar: datos nuevos y filtros reiniciados (el precio máximo pudo cambiar)
+    async function recargarTodo(seleccionar: string | null) {
+        try {
+            const datos = await onRecargar();
+            setFiltros(filtrosIniciales(calcularRangos(datos)));
+        } catch {
+            // Si la recarga falla, el mapa sigue con los datos anteriores
+        }
+        setSeleccionId(seleccionar);
+    }
+
+    // ---------- Segmentación ----------
+
+    function iniciarLoteNuevo() {
+        setSeleccionId(null);
+        setErrorEdicion(null);
+        setEdicion({ modo: 'nuevo', puntos: [] });
+    }
+
+    function iniciarAjusteForma(lote: Lote) {
+        const feature = lotes.features.find((f) => f.properties.id === lote.id);
+        if (!feature) return;
+        setErrorEdicion(null);
+        setEdicion({ modo: 'forma', loteId: lote.id, puntos: esquinasLote(feature) });
+    }
+
+    function agregarPunto(punto: Punto) {
+        setEdicion((actual) => (actual && actual.modo === 'nuevo' ? { ...actual, puntos: [...actual.puntos, punto] } : actual));
+    }
+
+    function moverPunto(indice: number, punto: Punto) {
+        setErrorEdicion(null);
+        setEdicion((actual) =>
+            actual ? { ...actual, puntos: actual.puntos.map((p, i) => (i === indice ? punto : p)) } : actual,
+        );
+    }
+
+    function deshacerPunto() {
+        setEdicion((actual) => (actual ? { ...actual, puntos: actual.puntos.slice(0, -1) } : actual));
+    }
+
+    function cancelarEdicion() {
+        const loteId = edicion?.loteId ?? null;
+        setEdicion(null);
+        setErrorEdicion(null);
+        setSeleccionId(loteId); // al cancelar un ajuste, vuelve a la ficha de ese lote
+    }
+
+    async function guardarForma() {
+        if (!edicion?.loteId) return;
+        setGuardandoForma(true);
+        setErrorEdicion(null);
+        try {
+            await actualizarForma(edicion.loteId, edicion.puntos);
+            const id = edicion.loteId;
+            setEdicion(null);
+            await recargarTodo(id);
+        } catch (e) {
+            setErrorEdicion(e instanceof ErrorApi ? e.message : 'No se pudo guardar la forma.');
+        } finally {
+            setGuardandoForma(false);
+        }
+    }
+
+    async function loteGuardado(lote: Lote) {
+        setFormulario(null);
+        setEdicion(null);
+        await recargarTodo(lote.id);
+    }
+
+    async function loteEliminado() {
+        await recargarTodo(null);
+    }
+
     return (
         <>
             <MapaLotes
                 lotes={lotes}
                 filtros={filtros}
                 loteSeleccionadoId={loteSeleccionado?.id ?? null}
-                onSeleccionar={setLoteSeleccionado}
+                onSeleccionar={setSeleccionId}
+                dibujo={edicion}
+                onAgregarPunto={agregarPunto}
+                onMoverPunto={moverPunto}
             />
             <PanelFiltros
                 filtros={filtros}
@@ -58,12 +148,43 @@ export default function VistaMapa({ lotes, onLoteActualizado }: Props) {
                 onLimpiar={() => setFiltros(filtrosIniciales(rangos))}
             />
             <Leyenda lotes={lotes} />
-            {loteSeleccionado && (
+
+            {modoVendedor && (
+                <HerramientasVendedor
+                    dibujo={edicion}
+                    loteEnEdicion={edicion?.loteId ?? null}
+                    guardando={guardandoForma}
+                    error={errorEdicion}
+                    onNuevo={iniciarLoteNuevo}
+                    onDeshacer={deshacerPunto}
+                    onCancelar={cancelarEdicion}
+                    onTerminar={() => edicion && setFormulario({ tipo: 'crear', puntos: edicion.puntos })}
+                    onGuardarForma={guardarForma}
+                />
+            )}
+
+            {/* Mientras se dibuja, la ficha se oculta para dejar libre el mapa */}
+            {loteSeleccionado && !edicion && (
                 <PanelLote
                     lote={loteSeleccionado}
                     modoVendedor={modoVendedor}
-                    onEstadoCambiado={estadoCambiado}
-                    onCerrar={() => setLoteSeleccionado(null)}
+                    onEstadoCambiado={onLoteActualizado}
+                    onEditarDatos={() => setFormulario({ tipo: 'editar', lote: loteSeleccionado })}
+                    onEditarForma={() => iniciarAjusteForma(loteSeleccionado)}
+                    onEliminado={loteEliminado}
+                    onCerrar={() => setSeleccionId(null)}
+                />
+            )}
+
+            {formulario && (
+                <FormularioLote
+                    modo={formulario}
+                    onCerrar={() => setFormulario(null)} // un lote nuevo vuelve al dibujo para seguir ajustándolo
+                    onGuardado={loteGuardado}
+                    onCambioParcial={(lote) => {
+                        setEdicion(null);
+                        void recargarTodo(lote.id);
+                    }}
                 />
             )}
         </>

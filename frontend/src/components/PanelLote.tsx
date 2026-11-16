@@ -4,7 +4,8 @@ import { ESTADOS } from '../config/estados';
 import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
 import { formatoPesos } from '../utils/formato';
 import FormularioVisita from './FormularioVisita';
-import CambioEstado from './CambioEstado';
+import AccionesVendedor from './AccionesVendedor';
+import { urlVideo } from '../services/lotesApi';
 import {
     IconoArea, IconoCalendario, IconoCerrar, IconoCheck, IconoCompartir, IconoGrafica, IconoInfo, IconoMensaje,
 } from './Iconos';
@@ -13,10 +14,15 @@ interface Props {
     lote: Lote;
     modoVendedor: boolean;
     onEstadoCambiado: (lote: Lote) => void;
+    onEditarDatos: () => void;
+    onEditarForma: () => void;
+    onEliminado: (id: string) => void;
     onCerrar: () => void;
 }
 
-export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerrar }: Props) {
+export default function PanelLote({
+    lote, modoVendedor, onEstadoCambiado, onEditarDatos, onEditarForma, onEliminado, onCerrar,
+}: Props) {
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
     const [copiado, setCopiado] = useState(false);
 
@@ -74,6 +80,18 @@ export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerr
                 <h2>Lote {lote.numero}</h2>
             </div>
 
+            {/* Video del lote: reemplaza la vista de calle. key: si cambia el video, el reproductor se reinicia */}
+            {lote.video && (
+                <video
+                    key={lote.video}
+                    className="panel-video"
+                    src={urlVideo(lote)}
+                    controls
+                    preload="metadata"
+                    playsInline
+                />
+            )}
+
             <div className="precio">
                 <span>Precio</span>
                 <strong>{formatoPesos.format(lote.precio)}</strong>
@@ -118,7 +136,14 @@ export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerr
 
             {/* Solo con ?vendedor. key: al cambiar de lote, el selector se reinicia */}
             {modoVendedor && (
-                <CambioEstado key={lote.id} lote={lote} onCambiado={onEstadoCambiado} />
+                <AccionesVendedor
+                    key={lote.id}
+                    lote={lote}
+                    onEstadoCambiado={onEstadoCambiado}
+                    onEditarDatos={onEditarDatos}
+                    onEditarForma={onEditarForma}
+                    onEliminado={onEliminado}
+                />
             )}
 
             {mostrarFormulario && (

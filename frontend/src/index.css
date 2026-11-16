@@ -268,6 +268,65 @@ button, input, select, textarea { font-family: inherit; }
 .vendedor-msg.error { color: var(--peligro); }
 .vendedor-msg:empty { display: none; }
 
+/* Acciones del vendedor dentro de la ficha */
+.vendedor { gap: 12px; }
+.vendedor-estado { display: flex; flex-direction: column; gap: 6px; }
+.vendedor-estado-fila { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.vendedor-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-eliminar { align-self: flex-start; color: var(--peligro); padding-left: 4px; }
+.btn-eliminar:hover { background: var(--peligro-fondo); }
+.btn-peligro {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 7px 12px; border-radius: var(--radio-sm); border: 1px solid var(--peligro);
+  background: var(--peligro); color: #fff; font: 600 13px var(--fuente); cursor: pointer;
+}
+.btn-peligro:disabled { opacity: .6; cursor: wait; }
+.confirmar {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--radio-sm);
+  background: var(--peligro-fondo); border: 1px solid #F6CFCB;
+}
+.confirmar p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--peligro); }
+.confirmar-botones { display: flex; gap: 8px; }
+
+/* Video del lote en la ficha (reemplaza la vista de calle) */
+.panel-video {
+  display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 12px;
+  background: #0B1A13; object-fit: contain;
+}
+
+/* ---------- Herramientas del vendedor (segmentación) ---------- */
+.herramientas {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 4;
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px;
+  max-width: min(640px, calc(100% - 32px)); font-size: 13px;
+}
+.herramientas-titulo {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font: 600 13px var(--fuente-titulo); color: var(--verde-marca);
+}
+.herramientas-ayuda { color: var(--texto-suave); white-space: nowrap; }
+.herramientas-activa { flex-wrap: wrap; padding: 10px 10px 10px 16px; border-color: var(--acento); }
+.herramientas-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
+.herramientas-texto strong { font: 600 14px var(--fuente-titulo); color: var(--texto); }
+.herramientas-texto span { color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+.herramientas-botones { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.herramientas-error {
+  flex-basis: 100%; margin: 0; display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 10px; border-radius: var(--radio-sm);
+  background: var(--peligro-fondo); color: var(--peligro); font-size: 13px; line-height: 1.45;
+}
+.herramientas-error svg { flex-shrink: 0; margin-top: 1px; }
+.btn-fantasma:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Esquinas del lote en dibujo: se pueden arrastrar */
+.vertice {
+  width: 16px; height: 16px; border-radius: 50%; cursor: grab;
+  background: #fff; border: 3px solid var(--verde-marca);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+}
+.vertice:active { cursor: grabbing; }
+.vertice-inicio { width: 20px; height: 20px; border-color: var(--acento); background: var(--verde-marca); }
+
 /* ---------- Formulario de visita ---------- */
 .modal-fondo {
   position: fixed; inset: 0; z-index: 10;
@@ -326,6 +385,43 @@ button, input, select, textarea { font-family: inherit; }
 }
 .exito p { margin: 0; color: var(--texto-suave); line-height: 1.6; }
 
+/* Formulario del lote (vendedor) */
+.modal-lote { max-width: 560px; }
+.campo input:disabled { background: var(--fondo); color: var(--texto-suave); cursor: not-allowed; }
+.campo-ayuda { font-size: 12px; font-weight: 400; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+.campo-nota { margin: -6px 0 14px; font-size: 12.5px; color: var(--texto-suave); }
+.campo-video {
+  display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; padding: 0; border: none; min-width: 0;
+}
+.campo-video legend { padding: 0; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--texto); }
+.video-actual {
+  display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center;
+  padding: 8px; border-radius: var(--radio-sm); background: var(--fondo);
+}
+.video-actual video { width: 120px; aspect-ratio: 16 / 9; border-radius: 8px; background: #0B1A13; object-fit: cover; }
+.video-actual p { margin: 0 0 4px; font-size: 13px; color: var(--texto); }
+.video-actual .btn-fantasma { color: var(--peligro); padding-left: 0; }
+.selector-video {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-radius: var(--radio-sm); cursor: pointer;
+  border: 1.5px dashed var(--verde-borde); background: var(--verde-suave);
+  color: var(--verde-marca); font-size: 13.5px; font-weight: 500;
+}
+.selector-video:hover { border-color: var(--verde-secundario); }
+.selector-video span { min-width: 0; overflow-wrap: anywhere; }
+.selector-video svg { flex-shrink: 0; }
+.selector-video input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.selector-video:focus-within { outline: 2px solid var(--verde-secundario); outline-offset: 2px; }
+.progreso {
+  position: relative; height: 34px; margin: 4px 0 8px; border-radius: var(--radio-sm);
+  background: var(--fondo); border: 1px solid var(--borde); overflow: hidden;
+}
+.progreso-barra { position: absolute; inset: 0 auto 0 0; background: var(--verde-suave); transition: width .2s; }
+.progreso span {
+  position: relative; display: flex; align-items: center; height: 100%; padding: 0 12px;
+  font-size: 13px; font-weight: 500; color: var(--verde-marca); font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Carga, error y copia guardada ---------- */
 .estado-carga {
   position: absolute; inset: 0;
@@ -362,12 +458,23 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 /* ---------- Tablet ---------- */
+@media (max-width: 1400px) {
+  .herramientas-ayuda { display: none; }
+  .leyenda { left: 16px; transform: none; }   /* que la ficha del lote no la tape */
+}
 @media (max-width: 1024px) {
   .barra-resumen { display: none; }
 }
 
 /* ---------- Celular ---------- */
 @media (max-width: 640px) {
+  .herramientas {
+    top: 84px; left: 12px; right: 12px; transform: none; max-width: none;
+    flex-wrap: wrap; padding: 8px 8px 8px 12px;
+  }
+  .herramientas-ayuda { display: none; }
+  .video-actual { grid-template-columns: 1fr; }
+  .video-actual video { width: 100%; }
   .barra { height: 60px; padding: 0 12px 0 16px; gap: 12px; }
   .barra-logo { height: 30px; }
   .barra-divisor, .barra-proyecto { display: none; }

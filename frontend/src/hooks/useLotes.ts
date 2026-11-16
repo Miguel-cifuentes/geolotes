@@ -92,5 +92,16 @@ export function useLotes() {
         });
     }, []);
 
-    return { estado, lotes, copiaDel, reintentar, actualizarLote };
+    // Vuelve a pedir todos los lotes sin mostrar la pantalla de carga
+    // (después de que el vendedor crea, ajusta o elimina un lote)
+    const recargar = useCallback(async (): Promise<Coleccion> => {
+        const datos = await obtenerLotes();
+        guardarCache(datos);
+        setLotes(datos);
+        setCopiaDel(null);
+        setEstado('listo');
+        return datos;
+    }, []);
+
+    return { estado, lotes, copiaDel, reintentar, actualizarLote, recargar };
 }

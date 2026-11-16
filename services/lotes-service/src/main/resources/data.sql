@@ -1,5 +1,6 @@
 -- 10 lotes de ejemplo en La Porfía: 2 manzanas (A al norte, B al sur) de 5 lotes de 12 x 25 m.
--- ON CONFLICT DO NOTHING: si el lote ya existe no se toca, así los cambios de estado sobreviven a los reinicios.
+-- Solo se cargan si la tabla está VACÍA: así los lotes que el vendedor borra o dibuja
+-- no se pierden ni reaparecen al reiniciar el servicio.
 INSERT INTO lotes (id, manzana, numero, area_m2, precio, estado, descripcion, geom)
 SELECT
     l.manzana || '-' || l.numero,
@@ -36,4 +37,5 @@ FROM (
              ) p
              ) c
      ) l
+WHERE NOT EXISTS (SELECT 1 FROM lotes)
     ON CONFLICT (id) DO NOTHING;
