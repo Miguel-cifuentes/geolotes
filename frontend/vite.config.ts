@@ -20,4 +20,8 @@ export default defineConfig({
       },
     },
   },
+  // npm run preview: acepta el enlace público del túnel de Cloudflare
+  preview: {
+    allowedHosts: ['.trycloudflare.com'],
+  },
 })
