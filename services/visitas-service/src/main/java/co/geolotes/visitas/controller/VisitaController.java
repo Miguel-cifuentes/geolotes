@@ -29,7 +29,7 @@ public class VisitaController {
         return servicio.crear(solicitud);
     }
 
-    // Para el vendedor (en el corte 3 se protegerá con login)
+    // Para el vendedor: exige iniciar sesión (ver auth/FiltroVendedor)
     @GetMapping
     public List<VisitaResponse> listar(@RequestParam(required = false) EstadoVisita estado) {
         return servicio.listar(estado);

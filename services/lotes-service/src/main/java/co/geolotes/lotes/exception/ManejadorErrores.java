@@ -1,5 +1,6 @@
 package co.geolotes.lotes.exception;
 
+import co.geolotes.lotes.auth.AutenticacionException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,12 @@ public class ManejadorErrores {
     // Reglas del negocio: forma inválida (400), lote repetido o lotes que se cruzan (409), video (404/415)
     @ExceptionHandler(LoteException.class)
     public ResponseEntity<Map<String, Object>> reglaDeNegocio(LoteException ex) {
+        return ResponseEntity.status(ex.getEstado()).body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    // 401: usuario o clave incorrectos · 429: demasiados intentos fallidos
+    @ExceptionHandler(AutenticacionException.class)
+    public ResponseEntity<Map<String, Object>> autenticacion(AutenticacionException ex) {
         return ResponseEntity.status(ex.getEstado()).body(Map.of("mensaje", ex.getMessage()));
     }
 

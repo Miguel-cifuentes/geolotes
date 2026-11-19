@@ -1,5 +1,6 @@
 import type { FeatureCollection, Polygon } from 'geojson';
 import type { EstadoLote, Lote, Punto } from '../types/lote';
+import { cerrarSesion, encabezadoAutorizacion } from './sesion';
 
 // Pide los lotes a lotes-service (a través del proxy de Vite o del API Gateway)
 export async function obtenerLotes(): Promise<FeatureCollection<Polygon, Lote>> {
@@ -22,9 +23,13 @@ export class ErrorConflicto extends Error {}
 export async function cambiarEstadoLote(id: string, estado: EstadoLote): Promise<Lote> {
     const respuesta = await fetch(`/api/lotes/${encodeURIComponent(id)}/estado`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...encabezadoAutorizacion() },
         body: JSON.stringify({ estado }),
     });
+    if (respuesta.status === 401) {
+        cerrarSesion(); // el token venció: App vuelve a pedir el ingreso
+        throw new Error('Tu sesión terminó. Inicia sesión de nuevo.');
+    }
     if (respuesta.status === 409) {
         throw new ErrorConflicto('El lote fue modificado por otra persona');
     }
@@ -63,7 +68,13 @@ interface CuerpoError {
     errores?: Record<string, string>;
 }
 
+const SESION_TERMINADA = 'Tu sesión terminó. Inicia sesión de nuevo.';
+
 function errorDesde(estado: number, cuerpo: CuerpoError): ErrorApi {
+    if (estado === 401) {
+        cerrarSesion(); // el token venció o no es válido: App vuelve a pedir el ingreso
+        return new ErrorApi(401, SESION_TERMINADA);
+    }
     return new ErrorApi(estado, cuerpo.mensaje ?? `lotes-service respondió ${estado}`, cuerpo.errores ?? {});
 }
 
@@ -72,7 +83,10 @@ async function enviar(url: string, metodo: string, cuerpo?: unknown): Promise<Re
     try {
         respuesta = await fetch(url, {
             method: metodo,
-            headers: cuerpo === undefined ? undefined : { 'Content-Type': 'application/json' },
+            headers: {
+                ...(cuerpo === undefined ? {} : { 'Content-Type': 'application/json' }),
+                ...encabezadoAutorizacion(),
+            },
             body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
         });
     } catch {
@@ -124,6 +138,7 @@ export function subirVideo(id: string, archivo: File, onProgreso: (fraccion: num
     return new Promise((resolver, rechazar) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${urlLote(id)}/video`);
+        for (const [nombre, valor] of Object.entries(encabezadoAutorizacion())) xhr.setRequestHeader(nombre, valor);
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) onProgreso(e.loaded / e.total);
         };

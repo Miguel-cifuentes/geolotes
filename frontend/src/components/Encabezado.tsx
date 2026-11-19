@@ -1,13 +1,20 @@
 import { ESTADOS } from '../config/estados';
 import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
-import { IconoTelefono, IconoUbicacion } from './Iconos';
+import type { Sesion } from '../services/sesion';
+import { IconoCandado, IconoLlave, IconoSalir, IconoTelefono, IconoUbicacion } from './Iconos';
 
 interface Props {
     disponibles: number;
     total: number;
+    sesion: Sesion | null;
+    modoVendedor: boolean;           // hay sesión y la persona está en la vista del vendedor
+    onSoyVendedor: () => void;       // abre el inicio de sesión
+    onVolverAComprador: () => void;  // cierra la sesión y vuelve al mapa del comprador
 }
 
-export default function Encabezado({ disponibles, total }: Props) {
+export default function Encabezado({
+    disponibles, total, sesion, modoVendedor, onSoyVendedor, onVolverAComprador,
+}: Props) {
     const contacto = enlaceWhatsapp(
         `Hola, quiero información sobre los lotes de ${PROYECTO.nombre} que vi en GeoLotes.`,
     );
@@ -33,16 +40,45 @@ export default function Encabezado({ disponibles, total }: Props) {
                         <b>{disponibles}</b> de {total} lotes disponibles
                     </span>
                 )}
-                <a
-                    className="btn-primario btn-contacto"
-                    href={contacto}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Contactar al vendedor por WhatsApp"
-                >
-                    <IconoTelefono width={16} height={16} />
-                    <span>Contactar al vendedor</span>
-                </a>
+                {modoVendedor && sesion ? (
+                    // Vista del vendedor: su nombre y el botón para volver a comprador (cierra la sesión)
+                    <div className="barra-sesion">
+                        <span className="barra-vendedor" title={`Sesión de ${sesion.usuario}`}>
+                            <IconoCandado width={15} height={15} />
+                            <span>{sesion.nombre}</span>
+                        </span>
+                        <button
+                            className="btn-secundario btn-barra"
+                            onClick={onVolverAComprador}
+                            aria-label="Volver a comprador y cerrar sesión"
+                        >
+                            <IconoSalir width={16} height={16} />
+                            <span>Volver a comprador</span>
+                        </button>
+                    </div>
+                ) : (
+                    // Vista del comprador: el acceso del vendedor y el contacto por WhatsApp
+                    <>
+                        <button
+                            className="btn-secundario btn-barra"
+                            onClick={onSoyVendedor}
+                            aria-label="Soy vendedor: iniciar sesión"
+                        >
+                            <IconoLlave width={16} height={16} />
+                            <span>Soy vendedor</span>
+                        </button>
+                        <a
+                            className="btn-primario btn-contacto"
+                            href={contacto}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Contactar al vendedor por WhatsApp"
+                        >
+                            <IconoTelefono width={16} height={16} />
+                            <span>Contactar al vendedor</span>
+                        </a>
+                    </>
+                )}
             </div>
         </header>
     );
