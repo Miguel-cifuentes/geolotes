@@ -32,3 +32,11 @@ springdoc:
 geolotes:
   videos:
     carpeta: ${VIDEOS_DIR:videos}       # carpeta donde se guardan los videos de los lotes
+  auth:
+    # Firma de los tokens: el MISMO valor en lotes-service y visitas-service, mínimo 32 caracteres
+    secreto: ${JWT_SECRETO:geolotes-secreto-de-desarrollo-cambiar-en-produccion}
+    duracion-horas: 8                   # la sesión del vendedor dura una jornada
+  vendedor:                             # cuenta que se crea al primer arranque
+    usuario: ${VENDEDOR_USUARIO:vendedor}
+    nombre: ${VENDEDOR_NOMBRE:Vendedor La Porfía}
+    clave: ${VENDEDOR_CLAVE:LaPorfia2026}

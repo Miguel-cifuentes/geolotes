@@ -18,6 +18,7 @@ type Coleccion = FeatureCollection<Polygon, Lote>;
 
 interface Props {
     lotes: Coleccion;
+    modoVendedor: boolean; // hay sesión del vendedor
     onLoteActualizado: (lote: Lote) => void;
     onRecargar: () => Promise<Coleccion>;
 }
@@ -25,7 +26,7 @@ interface Props {
 // Lo que el vendedor está dibujando: un lote nuevo, o la forma de uno existente (loteId)
 type Edicion = Dibujo & { loteId?: string };
 
-export default function VistaMapa({ lotes, onLoteActualizado, onRecargar }: Props) {
+export default function VistaMapa({ lotes, modoVendedor, onLoteActualizado, onRecargar }: Props) {
     const rangos = useMemo(() => calcularRangos(lotes), [lotes]);
     const [filtros, setFiltros] = useState<Filtros>(() => filtrosIniciales(rangos));
 
@@ -35,9 +36,6 @@ export default function VistaMapa({ lotes, onLoteActualizado, onRecargar }: Prop
         () => new URLSearchParams(window.location.search).get('lote')?.toUpperCase() ?? null,
     );
     const loteSeleccionado = lotes.features.find((f) => f.properties.id === seleccionId)?.properties ?? null;
-
-    // ?vendedor en la dirección muestra las herramientas del vendedor (el login llega en el corte 3)
-    const [modoVendedor] = useState(() => new URLSearchParams(window.location.search).has('vendedor'));
 
     const [edicion, setEdicion] = useState<Edicion | null>(null);
     const [formulario, setFormulario] = useState<ModoFormulario | null>(null);
@@ -51,6 +49,14 @@ export default function VistaMapa({ lotes, onLoteActualizado, onRecargar }: Prop
         else url.searchParams.delete('lote');
         window.history.replaceState(null, '', url);
     }, [loteSeleccionado]);
+
+    // Si la sesión se cierra o vence a mitad de un dibujo, se descarta lo que estaba abierto
+    useEffect(() => {
+        if (modoVendedor) return;
+        setEdicion(null);
+        setFormulario(null);
+        setErrorEdicion(null);
+    }, [modoVendedor]);
 
     const visibles = lotes.features.filter((f) => cumpleFiltros(f.properties, filtros)).length;
 

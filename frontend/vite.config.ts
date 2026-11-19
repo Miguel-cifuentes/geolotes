@@ -14,6 +14,11 @@ export default defineConfig({
         target: 'http://localhost:8081',
         rewrite: (ruta) => ruta.replace(/^\/api/, ''),
       },
+      // El inicio de sesión del vendedor lo atiende lotes-service
+      '/api/auth': {
+        target: 'http://localhost:8081',
+        rewrite: (ruta) => ruta.replace(/^\/api/, ''),
+      },
       '/api/visitas': {
         target: 'http://localhost:8082',
         rewrite: (ruta) => ruta.replace(/^\/api/, ''),

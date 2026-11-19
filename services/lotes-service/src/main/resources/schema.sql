@@ -22,3 +22,12 @@ CREATE INDEX IF NOT EXISTS idx_lotes_geom ON lotes USING GIST (geom);
 -- Video del lote (nombre del archivo guardado en la carpeta de videos). Se agrega aparte
 -- para que las bases que ya existen reciban la columna sin perder sus datos.
 ALTER TABLE lotes ADD COLUMN IF NOT EXISTS video VARCHAR(120);
+
+-- Cuentas del panel del vendedor. La contraseña se guarda como huella PBKDF2, nunca en texto plano.
+-- La cuenta inicial la crea VendedorInicial.java al arrancar.
+CREATE TABLE IF NOT EXISTS vendedores (
+    usuario     VARCHAR(40)  PRIMARY KEY,
+    nombre      VARCHAR(80)  NOT NULL,
+    clave_hash  VARCHAR(200) NOT NULL,
+    creado_en   TIMESTAMPTZ  NOT NULL DEFAULT now()
+);

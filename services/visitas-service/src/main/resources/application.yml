@@ -17,3 +17,8 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+geolotes:
+  auth:
+    # El MISMO secreto de lotes-service: así se verifican aquí los tokens que emite el login
+    secreto: ${JWT_SECRETO:geolotes-secreto-de-desarrollo-cambiar-en-produccion}

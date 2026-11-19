@@ -385,6 +385,25 @@ button, input, select, textarea { font-family: inherit; }
 }
 .exito p { margin: 0; color: var(--texto-suave); line-height: 1.6; }
 
+/* Inicio de sesión del vendedor */
+.modal-sesion { max-width: 400px; }
+.sesion-icono {
+  display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px;
+  border-radius: 12px; background: var(--verde-suave); color: var(--verde-marca);
+}
+.campo-clave { position: relative; display: flex; }
+.campo-clave input { flex: 1; padding-right: 44px; }
+.campo-clave .btn-icono { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); }
+
+.barra-sesion { display: flex; align-items: center; gap: 10px; }
+.barra-vendedor {
+  display: flex; align-items: center; gap: 6px; max-width: 220px; padding: 6px 12px;
+  border-radius: 999px; background: var(--verde-suave); border: 1px solid var(--verde-borde);
+  color: var(--verde-marca); font-size: 13px; font-weight: 600;
+}
+.barra-vendedor span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-vendedor svg, .btn-salir svg { flex-shrink: 0; }
+
 /* Formulario del lote (vendedor) */
 .modal-lote { max-width: 560px; }
 .campo input:disabled { background: var(--fondo); color: var(--texto-suave); cursor: not-allowed; }
@@ -480,6 +499,8 @@ button, input, select, textarea { font-family: inherit; }
   .barra-divisor, .barra-proyecto { display: none; }
   .btn-contacto { padding: 10px; }
   .btn-contacto span { display: none; }   /* solo el ícono */
+  .barra-vendedor span, .btn-salir span { display: none; }
+  .barra-vendedor, .btn-salir { padding: 9px; }
 
   .filtros { top: 12px; left: 12px; right: 56px; width: auto; }
 
