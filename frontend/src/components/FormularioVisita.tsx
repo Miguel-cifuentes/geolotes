@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type { Lote } from '../types/lote';
 import type { SolicitudVisita } from '../types/visita';
 import { enviarSolicitudVisita, ErrorValidacion } from '../services/visitasApi';
+import { PROYECTO } from '../config/proyecto';
+import { IconoAlerta, IconoCerrar, IconoCheck } from './Iconos';
 
 type Errores = Partial<Record<keyof SolicitudVisita, string>>;
 type EstadoEnvio = 'editando' | 'enviando' | 'exito' | 'error';
@@ -70,22 +73,35 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
             setEstado('exito');
         } catch (error) {
             if (error instanceof ErrorValidacion) {
+                // 400: el backend rechazó algún campo; se muestra junto a ese campo
                 setErrores(error.errores);
                 setEstado('editando');
+            } else {
+                // Servidor caído o error inesperado: los datos escritos se conservan
+                setEstado('error');
             }
-            setEstado('error');
         }
     }
 
-    return (
+    // Portal: el formulario se dibuja directamente en <body>, por encima del encabezado y de la ficha
+    return createPortal(
         <div className="modal-fondo" onClick={onCerrar}>
             {/* stopPropagation: un clic dentro del formulario no debe cerrarlo */}
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <button className="panel-cerrar" onClick={onCerrar} aria-label="Cerrar">×</button>
+            <div
+                className="modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titulo-visita"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button className="btn-icono modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
+                    <IconoCerrar />
+                </button>
 
                 {estado === 'exito' ? (
                     <div className="exito">
-                        <h2>¡Solicitud enviada!</h2>
+                        <span className="exito-icono"><IconoCheck width={28} height={28} /></span>
+                        <h2 id="titulo-visita">¡Solicitud enviada!</h2>
                         <p>
                             El vendedor te contactará al <b>{datos.telefono}</b> para confirmar tu visita al
                             Lote {lote.numero} de la Manzana {lote.manzana}.
@@ -94,8 +110,11 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                     </div>
                 ) : (
                     <form onSubmit={enviar} noValidate>
-                        <p className="panel-sub">Manzana {lote.manzana} · Lote {lote.numero}</p>
-                        <h2>Agendar visita</h2>
+                        <div className="modal-cabecera">
+                            <p className="panel-sub">{PROYECTO.nombre} · Manzana {lote.manzana} · Lote {lote.numero}</p>
+                            <h2 id="titulo-visita">Agendar visita</h2>
+                            <p className="modal-nota">Elige cuándo te queda bien. El vendedor te llamará para confirmar.</p>
+                        </div>
 
                         <label className="campo">
                             Nombre completo *
@@ -103,35 +122,40 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                                 value={datos.nombre}
                                 onChange={(e) => actualizar('nombre', e.target.value)}
                                 autoComplete="name"
+                                aria-invalid={Boolean(errores.nombre)}
                             />
                             {errores.nombre && <span className="error">{errores.nombre}</span>}
                         </label>
 
-                        <label className="campo">
-                            Celular *
-                            <input
-                                type="tel"
-                                inputMode="numeric"
-                                maxLength={10}
-                                placeholder="3001234567"
-                                value={datos.telefono}
-                                // Solo deja escribir números
-                                onChange={(e) => actualizar('telefono', e.target.value.replace(/\D/g, ''))}
-                                autoComplete="tel"
-                            />
-                            {errores.telefono && <span className="error">{errores.telefono}</span>}
-                        </label>
+                        <div className="fila">
+                            <label className="campo">
+                                Celular *
+                                <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    maxLength={10}
+                                    placeholder="3001234567"
+                                    value={datos.telefono}
+                                    // Solo deja escribir números
+                                    onChange={(e) => actualizar('telefono', e.target.value.replace(/\D/g, ''))}
+                                    autoComplete="tel"
+                                    aria-invalid={Boolean(errores.telefono)}
+                                />
+                                {errores.telefono && <span className="error">{errores.telefono}</span>}
+                            </label>
 
-                        <label className="campo">
-                            Correo (opcional)
-                            <input
-                                type="email"
-                                value={datos.correo}
-                                onChange={(e) => actualizar('correo', e.target.value)}
-                                autoComplete="email"
-                            />
-                            {errores.correo && <span className="error">{errores.correo}</span>}
-                        </label>
+                            <label className="campo">
+                                Correo (opcional)
+                                <input
+                                    type="email"
+                                    value={datos.correo}
+                                    onChange={(e) => actualizar('correo', e.target.value)}
+                                    autoComplete="email"
+                                    aria-invalid={Boolean(errores.correo)}
+                                />
+                                {errores.correo && <span className="error">{errores.correo}</span>}
+                            </label>
+                        </div>
 
                         <div className="fila">
                             <label className="campo">
@@ -141,6 +165,7 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                                     min={fechaDeManana()}
                                     value={datos.fechaPreferida}
                                     onChange={(e) => actualizar('fechaPreferida', e.target.value)}
+                                    aria-invalid={Boolean(errores.fechaPreferida)}
                                 />
                                 {errores.fechaPreferida && <span className="error">{errores.fechaPreferida}</span>}
                             </label>
@@ -174,16 +199,26 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                                 onChange={(e) => actualizar('aceptaTratamientoDatos', e.target.checked)}
                             />
                             <span>
-                Autorizo el tratamiento de mis datos personales para ser contactado sobre este lote,
-                conforme a la Ley 1581 de 2012.
-              </span>
+                                Autorizo el tratamiento de mis datos personales para ser contactado sobre este lote,
+                                conforme a la{' '}
+                                <a
+                                    href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Ley 1581 de 2012
+                                </a>.
+                            </span>
                         </label>
                         {errores.aceptaTratamientoDatos && (
                             <span className="error">{errores.aceptaTratamientoDatos}</span>
                         )}
 
                         {estado === 'error' && (
-                            <p className="error">No pudimos enviar la solicitud. Intenta de nuevo.</p>
+                            <p className="alerta-error" role="alert">
+                                <IconoAlerta width={18} height={18} />
+                                No pudimos enviar la solicitud. Revisa tu conexión e intenta de nuevo; tus datos siguen aquí.
+                            </p>
                         )}
 
                         <button type="submit" className="btn-primario" disabled={estado === 'enviando'}>
@@ -192,6 +227,7 @@ export default function FormularioVisita({ lote, onCerrar }: Props) {
                     </form>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

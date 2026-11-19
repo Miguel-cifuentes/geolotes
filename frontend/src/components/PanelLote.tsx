@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { Lote } from '../types/lote';
 import { ESTADOS } from '../config/estados';
+import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
 import { formatoPesos } from '../utils/formato';
 import FormularioVisita from './FormularioVisita';
 import CambioEstado from './CambioEstado';
-
-// ⚠️ Número del vendedor (57 + celular, sin espacios ni +)
-const WHATSAPP_VENDEDOR = '573112642383';
+import {
+    IconoArea, IconoCalendario, IconoCerrar, IconoCheck, IconoCompartir, IconoGrafica, IconoInfo, IconoMensaje,
+} from './Iconos';
 
 interface Props {
     lote: Lote;
@@ -20,9 +21,13 @@ export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerr
     const [copiado, setCopiado] = useState(false);
 
     const estado = ESTADOS[lote.estado];
+    const seVende = lote.estado === 'DISPONIBLE' || lote.estado === 'RESERVADO';
+    const valorM2 = lote.areaM2 > 0 ? Math.round(lote.precio / lote.areaM2) : null;
+
     const enlace = `${window.location.origin}${window.location.pathname}?lote=${lote.id}`;
-    const mensaje = `Hola, me interesa el Lote ${lote.numero} de la Manzana ${lote.manzana} que vi en GeoLotes: ${enlace}`;
-    const enlaceWhatsapp = `https://wa.me/${WHATSAPP_VENDEDOR}?text=${encodeURIComponent(mensaje)}`;
+    const whatsapp = enlaceWhatsapp(
+        `Hola, me interesa el Lote ${lote.numero} de la Manzana ${lote.manzana} que vi en GeoLotes: ${enlace}`,
+    );
 
     async function compartir() {
         const datos = {
@@ -45,38 +50,71 @@ export default function PanelLote({ lote, modoVendedor, onEstadoCambiado, onCerr
         setTimeout(() => setCopiado(false), 2000);
     }
 
+    const botonCompartir = (
+        <button className="btn-secundario" onClick={compartir} aria-live="polite">
+            {copiado ? <IconoCheck width={16} height={16} /> : <IconoCompartir width={16} height={16} />}
+            {copiado ? 'Enlace copiado' : 'Compartir'}
+        </button>
+    );
+
     return (
-        <aside className="panel">
-            <button className="panel-cerrar" onClick={onCerrar} aria-label="Cerrar">×</button>
+        <aside className="panel tarjeta-flotante" aria-label={`Lote ${lote.numero} de la manzana ${lote.manzana}`}>
+            <div className="panel-cabecera">
+                <span className="estado">
+                    <span className="punto" style={{ background: estado.color }} />
+                    {estado.etiqueta}
+                </span>
+                <button className="btn-icono" onClick={onCerrar} aria-label="Cerrar ficha">
+                    <IconoCerrar />
+                </button>
+            </div>
 
-            <p className="panel-sub">Manzana {lote.manzana}</p>
-            <h2>Lote {lote.numero}</h2>
+            <div className="panel-titulo">
+                <p className="panel-sub">Manzana {lote.manzana} · {PROYECTO.nombre}</p>
+                <h2>Lote {lote.numero}</h2>
+            </div>
 
-            <span className="estado" style={{ background: estado.color }}>{estado.etiqueta}</span>
+            <div className="precio">
+                <span>Precio</span>
+                <strong>{formatoPesos.format(lote.precio)}</strong>
+            </div>
 
             <dl className="datos">
-                <div><dt>Área</dt><dd>{lote.areaM2} m²</dd></div>
-                <div><dt>Precio</dt><dd>{formatoPesos.format(lote.precio)}</dd></div>
+                <div className="dato">
+                    <dt><IconoArea width={15} height={15} />Área</dt>
+                    <dd>{lote.areaM2} m²</dd>
+                </div>
+                <div className="dato">
+                    <dt><IconoGrafica width={15} height={15} />Valor por m²</dt>
+                    <dd>{valorM2 !== null ? formatoPesos.format(valorM2) : '—'}</dd>
+                </div>
             </dl>
 
-            <p className="descripcion">{lote.descripcion}</p>
+            {lote.descripcion && <p className="descripcion">{lote.descripcion}</p>}
 
-            {lote.estado === 'DISPONIBLE' || lote.estado === 'RESERVADO' ? (
+            {seVende ? (
                 <div className="acciones">
                     <button className="btn-primario" onClick={() => setMostrarFormulario(true)}>
+                        <IconoCalendario width={16} height={16} />
                         Agendar visita
                     </button>
-                    <a className="btn-secundario" href={enlaceWhatsapp} target="_blank" rel="noreferrer">
-                        Escribir por WhatsApp
-                    </a>
+                    <div className="acciones-fila">
+                        <a className="btn-secundario" href={whatsapp} target="_blank" rel="noreferrer">
+                            <IconoMensaje width={16} height={16} />
+                            WhatsApp
+                        </a>
+                        {botonCompartir}
+                    </div>
                 </div>
             ) : (
-                <p className="no-disponible">Este lote ya no está a la venta.</p>
+                <div className="acciones">
+                    <p className="no-disponible">
+                        <IconoInfo width={18} height={18} />
+                        Este lote ya no está a la venta. Los lotes en verde siguen disponibles.
+                    </p>
+                    {botonCompartir}
+                </div>
             )}
-
-            <button className="btn-compartir" onClick={compartir} aria-live="polite">
-                {copiado ? '✓ Enlace copiado' : 'Compartir lote'}
-            </button>
 
             {/* Solo con ?vendedor. key: al cambiar de lote, el selector se reinicia */}
             {modoVendedor && (

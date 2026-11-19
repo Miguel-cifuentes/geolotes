@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ESTADOS } from '../config/estados';
 import { TODOS_LOS_ESTADOS } from '../utils/filtros';
 import { formatoPesos } from '../utils/formato';
+import { IconoCheck, IconoFiltros, IconoFlecha } from './Iconos';
 import type { EstadoLote } from '../types/lote';
 import type { Filtros, Rangos } from '../types/filtros';
 
@@ -31,15 +32,20 @@ export default function PanelFiltros({ filtros, rangos, visibles, total, onCambi
         filtros.areaMin > rangos.areaMin;
 
     return (
-        <section className="filtros" aria-label="Filtros de lotes">
+        <section className="filtros tarjeta-flotante" aria-label="Filtros de lotes">
             <button
                 className="filtros-cabecera"
                 onClick={() => setAbierto(!abierto)}
                 aria-expanded={abierto}
             >
-                <span>Filtros</span>
-                <span className="filtros-contador">{visibles} de {total} lotes</span>
-                <span aria-hidden="true">{abierto ? '▲' : '▼'}</span>
+                <span className="icono-caja">
+                    <IconoFiltros />
+                </span>
+                <span className="filtros-titulo">
+                    <strong>Filtrar lotes</strong>
+                    <span className="filtros-contador">{visibles} de {total} lotes visibles</span>
+                </span>
+                <IconoFlecha className="filtros-flecha" />
             </button>
 
             {abierto && (
@@ -58,6 +64,7 @@ export default function PanelFiltros({ filtros, rangos, visibles, total, onCambi
                                     >
                                         <span className="chip-color" style={{ background: ESTADOS[estado].color }} />
                                         {ESTADOS[estado].etiqueta}
+                                        <IconoCheck className="chip-check" width={14} height={14} />
                                     </button>
                                 );
                             })}
@@ -65,9 +72,10 @@ export default function PanelFiltros({ filtros, rangos, visibles, total, onCambi
                     </fieldset>
 
                     <label className="filtro">
-            <span className="filtro-titulo">
-              Precio máximo <b>{formatoPesos.format(filtros.precioMax)}</b>
-            </span>
+                        <span className="filtro-titulo">
+                            Precio máximo
+                            <span className="filtro-valor">{formatoPesos.format(filtros.precioMax)}</span>
+                        </span>
                         <input
                             type="range"
                             min={rangos.precioMin}
@@ -76,15 +84,20 @@ export default function PanelFiltros({ filtros, rangos, visibles, total, onCambi
                             value={filtros.precioMax}
                             onChange={(e) => onCambiar({ ...filtros, precioMax: Number(e.target.value) })}
                         />
+                        <span className="filtro-limites">
+                            <span>{formatoPesos.format(rangos.precioMin)}</span>
+                            <span>{formatoPesos.format(rangos.precioMax)}</span>
+                        </span>
                     </label>
 
                     {rangos.areaMin === rangos.areaMax ? (
                         <p className="filtro-nota">Todos los lotes miden {rangos.areaMin} m².</p>
                     ) : (
                         <label className="filtro">
-              <span className="filtro-titulo">
-                Área mínima <b>{filtros.areaMin} m²</b>
-              </span>
+                            <span className="filtro-titulo">
+                                Área mínima
+                                <span className="filtro-valor">{filtros.areaMin} m²</span>
+                            </span>
                             <input
                                 type="range"
                                 min={rangos.areaMin}
@@ -93,16 +106,23 @@ export default function PanelFiltros({ filtros, rangos, visibles, total, onCambi
                                 value={filtros.areaMin}
                                 onChange={(e) => onCambiar({ ...filtros, areaMin: Number(e.target.value) })}
                             />
+                            <span className="filtro-limites">
+                                <span>{rangos.areaMin} m²</span>
+                                <span>{rangos.areaMax} m²</span>
+                            </span>
                         </label>
                     )}
 
                     {visibles === 0 && <p className="filtro-vacio">Ningún lote cumple estos filtros.</p>}
 
-                    {hayFiltros && (
-                        <button className="btn-secundario filtros-limpiar" onClick={onLimpiar}>
-                            Limpiar filtros
-                        </button>
-                    )}
+                    <div className="filtros-pie">
+                        <span>Mostrando <b>{visibles}</b> de {total}</span>
+                        {hayFiltros && (
+                            <button className="btn-fantasma" onClick={onLimpiar}>
+                                Limpiar filtros
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
         </section>
