@@ -18,3 +18,7 @@ CREATE TABLE IF NOT EXISTS lotes (
 
 -- Índice espacial: acelera consultas geográficas ("lotes cerca de...", "lotes dentro de...")
 CREATE INDEX IF NOT EXISTS idx_lotes_geom ON lotes USING GIST (geom);
+
+-- Video del lote (nombre del archivo guardado en la carpeta de videos). Se agrega aparte
+-- para que las bases que ya existen reciban la columna sin perder sus datos.
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS video VARCHAR(120);

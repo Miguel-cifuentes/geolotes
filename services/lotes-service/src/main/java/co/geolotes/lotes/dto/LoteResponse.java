@@ -10,12 +10,13 @@ public record LoteResponse(
         Double areaM2,
         Long precio,
         EstadoLote estado,
-        String descripcion
+        String descripcion,
+        String video          // nombre del archivo; null si el lote no tiene video
 ) {
     public static LoteResponse desde(Lote l) {
         return new LoteResponse(
                 l.getId(), l.getManzana(), l.getNumero(), l.getAreaM2(),
-                l.getPrecio(), l.getEstado(), l.getDescripcion()
+                l.getPrecio(), l.getEstado(), l.getDescripcion(), l.getVideo()
         );
     }
 }

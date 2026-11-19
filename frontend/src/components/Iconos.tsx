@@ -122,3 +122,37 @@ export function IconoLlave(p: Props) {
         </Icono>
     );
 }
+
+export function IconoMas(p: Props) {
+    return <Icono {...p}><path d="M12 5v14" /><path d="M5 12h14" /></Icono>;
+}
+
+export function IconoLapiz(p: Props) {
+    return (
+        <Icono {...p}>
+            <path d="M21.2 6.8a2.8 2.8 0 0 0-4-4L4 16v4h4z" /><path d="m14.5 5.5 4 4" />
+        </Icono>
+    );
+}
+
+export function IconoBasura(p: Props) {
+    return (
+        <Icono {...p}>
+            <path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        </Icono>
+    );
+}
+
+export function IconoDeshacer(p: Props) {
+    return <Icono {...p}><path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-3" /></Icono>;
+}
+
+export function IconoVideo(p: Props) {
+    return (
+        <Icono {...p}>
+            <rect x="2" y="6" width="14" height="12" rx="2" />
+            <path d="m16 10 6-4v12l-6-4" />
+        </Icono>
+    );
+}

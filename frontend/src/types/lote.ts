@@ -11,4 +11,8 @@ export interface Lote {
     precio: number;       // en pesos colombianos
     estado: EstadoLote;
     descripcion: string;
+    video?: string | null; // nombre del archivo de video; vacío si el lote no tiene
 }
+
+// Un punto del mapa: [longitud, latitud]
+export type Punto = [number, number];

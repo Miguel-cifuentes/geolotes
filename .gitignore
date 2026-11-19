@@ -25,3 +25,5 @@ Thumbs.db
 
 # Logs
 *.log
+# Videos de los lotes (se guardan en el servidor, no en git)
+videos/

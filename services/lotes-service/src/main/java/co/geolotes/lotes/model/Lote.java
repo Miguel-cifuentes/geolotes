@@ -29,6 +29,10 @@ public class Lote {
 
     private String descripcion;
 
+    // Nombre del archivo de video guardado en la carpeta de videos (null si no tiene)
+    @Column(length = 120)
+    private String video;
+
     // La columna "geom" (el polígono) existe en la tabla pero NO se mapea aquí:
     // PostGIS la lee directamente al generar el GeoJSON (ver LoteRepository).
 
@@ -58,5 +62,10 @@ public class Lote {
     public Long getVersion() { return version; }
     public Instant getActualizadoEn() { return actualizadoEn; }
 
+    public String getVideo() { return video; }
+
     public void setEstado(EstadoLote estado) { this.estado = estado; }
+    public void setPrecio(Long precio) { this.precio = precio; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public void setVideo(String video) { this.video = video; }
 }

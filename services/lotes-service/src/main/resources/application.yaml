@@ -1,5 +1,7 @@
 server:
   port: 8081
+  tomcat:
+    max-swallow-size: -1   # deja que Spring responda 413 si el video es muy grande
 
 spring:
   application:
@@ -13,6 +15,10 @@ spring:
     hibernate:
       ddl-auto: none   # la tabla la crea schema.sql (Hibernate no maneja columnas geometry)
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 300MB      # videos de los lotes
+      max-request-size: 300MB
   sql:
     init:
       mode: always     # ejecuta schema.sql y data.sql en cada arranque
@@ -21,3 +27,8 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+
+geolotes:
+  videos:
+    carpeta: ${VIDEOS_DIR:videos}       # carpeta donde se guardan los videos de los lotes

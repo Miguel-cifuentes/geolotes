@@ -4,7 +4,7 @@ import { AvisoCopia, Cargando, ErrorCarga } from './components/EstadosCarga';
 import { useLotes } from './hooks/useLotes';
 
 export default function App() {
-    const { estado, lotes, copiaDel, reintentar, actualizarLote } = useLotes();
+    const { estado, lotes, copiaDel, reintentar, actualizarLote, recargar } = useLotes();
 
     const total = lotes?.features.length ?? 0;
     const disponibles = lotes?.features.filter((f) => f.properties.estado === 'DISPONIBLE').length ?? 0;
@@ -21,7 +21,7 @@ export default function App() {
             <main className="contenido">
                 {lotes ? (
                     // Con datos (nuevos o de la copia) el mapa siempre se muestra
-                    <VistaMapa lotes={lotes} onLoteActualizado={actualizarLote} />
+                    <VistaMapa lotes={lotes} onLoteActualizado={actualizarLote} onRecargar={recargar} />
                 ) : estado === 'error' ? (
                     <ErrorCarga onReintentar={reintentar} />
                 ) : (

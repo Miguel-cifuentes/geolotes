@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import type { FeatureCollection, Polygon } from 'geojson';
+import type { Feature, FeatureCollection, Polygon } from 'geojson';
 import { CENTRO } from '../data/lotesEjemplo';
 import { ESTADOS } from '../config/estados';
 import { expresionFiltros } from '../utils/filtros';
 import { centroLote } from '../utils/geo';
-import type { Lote } from '../types/lote';
+import type { Lote, Punto } from '../types/lote';
 import type { Filtros } from '../types/filtros';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -29,11 +29,20 @@ const LIMITES: [[number, number], [number, number]] = [
     [CENTRO[0] + MARGEN, CENTRO[1] + MARGEN],
 ];
 
+// Lote que el vendedor está dibujando ('nuevo') o ajustando ('forma')
+export interface Dibujo {
+    modo: 'nuevo' | 'forma';
+    puntos: Punto[];
+}
+
 interface Props {
     lotes: FeatureCollection<Polygon, Lote>;
     filtros: Filtros;
     loteSeleccionadoId: string | null;
-    onSeleccionar: (lote: Lote) => void;
+    onSeleccionar: (id: string) => void;
+    dibujo?: Dibujo | null;
+    onAgregarPunto?: (punto: Punto) => void;
+    onMoverPunto?: (indice: number, punto: Punto) => void;
 }
 
 // Pone la imagen satelital de Esri debajo de los nombres de calles y lugares
@@ -74,17 +83,46 @@ function enfocarLote(
     }
 }
 
-export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSeleccionar }: Props) {
+// Lo que se pinta mientras se dibuja: una línea con 2 puntos, un polígono desde 3
+function datosDibujo(puntos: Punto[]): FeatureCollection {
+    const features: Feature[] = [];
+    if (puntos.length >= 3) {
+        features.push({
+            type: 'Feature',
+            properties: {},
+            geometry: { type: 'Polygon', coordinates: [[...puntos, puntos[0]]] },
+        });
+    } else if (puntos.length === 2) {
+        features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: puntos } });
+    }
+    return { type: 'FeatureCollection', features };
+}
+
+function pintarDibujo(mapa: mapboxgl.Map, puntos: Punto[]) {
+    const fuente = mapa.getSource('dibujo') as mapboxgl.GeoJSONSource | undefined;
+    fuente?.setData(datosDibujo(puntos));
+}
+
+export default function MapaLotes({
+    lotes, filtros, loteSeleccionadoId, onSeleccionar, dibujo = null, onAgregarPunto, onMoverPunto,
+}: Props) {
     const contenedorRef = useRef<HTMLDivElement>(null);
     const mapaRef = useRef<mapboxgl.Map | null>(null);
+    const marcadoresRef = useRef<mapboxgl.Marker[]>([]);
 
     // Versión más reciente de las props, para usarla dentro de los eventos del mapa
     const onSeleccionarRef = useRef(onSeleccionar);
+    const onAgregarPuntoRef = useRef(onAgregarPunto);
+    const onMoverPuntoRef = useRef(onMoverPunto);
+    const dibujoRef = useRef(dibujo);
     const lotesRef = useRef(lotes);
     const filtrosRef = useRef(filtros);
     const seleccionadoRef = useRef(loteSeleccionadoId);
     useEffect(() => {
         onSeleccionarRef.current = onSeleccionar;
+        onAgregarPuntoRef.current = onAgregarPunto;
+        onMoverPuntoRef.current = onMoverPunto;
+        dibujoRef.current = dibujo;
         lotesRef.current = lotes;
         filtrosRef.current = filtros;
         seleccionadoRef.current = loteSeleccionadoId;
@@ -169,26 +207,56 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
                 },
             });
 
-            // Lo que haya cambiado mientras el mapa cargaba: filtros y lote del enlace
+            // Segmentación: el lote que el vendedor dibuja, por encima de los demás
+            mapa.addSource('dibujo', { type: 'geojson', data: datosDibujo([]) });
+            mapa.addLayer({
+                id: 'dibujo-relleno',
+                type: 'fill',
+                source: 'dibujo',
+                paint: { 'fill-color': '#A7D26D', 'fill-opacity': 0.35 },
+            });
+            mapa.addLayer({
+                id: 'dibujo-borde',
+                type: 'line',
+                source: 'dibujo',
+                paint: { 'line-color': '#A7D26D', 'line-width': 3, 'line-dasharray': [2, 1] },
+            });
+
+            // Lo que haya cambiado mientras el mapa cargaba: filtros, lote del enlace y dibujo
             aplicarFiltros(mapa, filtrosRef.current);
             enfocarLote(mapa, lotesRef.current, seleccionadoRef.current);
+            pintarDibujo(mapa, dibujoRef.current?.puntos ?? []);
 
-            // El clic solo avisa qué lote se eligió; el vuelo lo hace enfocarLote
-            mapa.on('click', 'lotes-relleno', (e) => {
-                const feature = e.features?.[0];
-                if (feature) onSeleccionarRef.current(feature.properties as unknown as Lote);
+            // Al dibujar un lote nuevo, cada clic en el mapa agrega una esquina
+            mapa.on('click', (e) => {
+                if (dibujoRef.current?.modo === 'nuevo') {
+                    onAgregarPuntoRef.current?.([e.lngLat.lng, e.lngLat.lat]);
+                }
             });
-            mapa.on('mouseenter', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = 'pointer'; });
-            mapa.on('mouseleave', 'lotes-relleno', () => { mapa.getCanvas().style.cursor = ''; });
+
+            // Fuera del dibujo, el clic en un lote lo selecciona; el vuelo lo hace enfocarLote
+            mapa.on('click', 'lotes-relleno', (e) => {
+                if (dibujoRef.current) return;
+                const id = e.features?.[0]?.properties?.id;
+                if (typeof id === 'string') onSeleccionarRef.current(id);
+            });
+            mapa.on('mouseenter', 'lotes-relleno', () => {
+                if (!dibujoRef.current) mapa.getCanvas().style.cursor = 'pointer';
+            });
+            mapa.on('mouseleave', 'lotes-relleno', () => {
+                if (!dibujoRef.current) mapa.getCanvas().style.cursor = '';
+            });
         });
 
         return () => {
+            marcadoresRef.current.forEach((m) => m.remove());
+            marcadoresRef.current = [];
             mapa.remove();
             mapaRef.current = null;
         };
     }, []);
 
-    // 2. Si cambian los lotes (al llegar de la API), actualizar la fuente
+    // 2. Si cambian los lotes (al llegar de la API o tras una edición), actualizar la fuente
     useEffect(() => {
         const fuente = mapaRef.current?.getSource('lotes') as mapboxgl.GeoJSONSource | undefined;
         fuente?.setData(lotes);
@@ -203,6 +271,38 @@ export default function MapaLotes({ lotes, filtros, loteSeleccionadoId, onSelecc
     useEffect(() => {
         if (mapaRef.current) enfocarLote(mapaRef.current, lotesRef.current, loteSeleccionadoId);
     }, [loteSeleccionadoId]);
+
+    // 5. Segmentación: pintar el lote en dibujo y poner un punto arrastrable en cada esquina
+    useEffect(() => {
+        const mapa = mapaRef.current;
+        if (!mapa) return;
+
+        const puntos = dibujo?.puntos ?? [];
+        pintarDibujo(mapa, puntos);
+        mapa.getCanvas().style.cursor = dibujo?.modo === 'nuevo' ? 'crosshair' : '';
+
+        marcadoresRef.current.forEach((m) => m.remove());
+        marcadoresRef.current = puntos.map((punto, indice) => {
+            const elemento = document.createElement('div');
+            elemento.className = indice === 0 ? 'vertice vertice-inicio' : 'vertice';
+            elemento.title = 'Arrastra para mover esta esquina';
+
+            const marcador = new mapboxgl.Marker({ element: elemento, draggable: true })
+                .setLngLat(punto)
+                .addTo(mapa);
+
+            // Mientras arrastra, el polígono sigue al punto; al soltar, se guarda en el estado
+            marcador.on('drag', () => {
+                const { lng, lat } = marcador.getLngLat();
+                pintarDibujo(mapa, puntos.map((p, i) => (i === indice ? [lng, lat] : p)));
+            });
+            marcador.on('dragend', () => {
+                const { lng, lat } = marcador.getLngLat();
+                onMoverPuntoRef.current?.(indice, [lng, lat]);
+            });
+            return marcador;
+        });
+    }, [dibujo]);
 
     return <div ref={contenedorRef} className="mapa" />;
 }
