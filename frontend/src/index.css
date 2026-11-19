@@ -404,8 +404,6 @@ button, input, select, textarea { font-family: inherit; }
 .barra-vendedor span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .barra-vendedor svg { flex-shrink: 0; }
 .btn-barra { padding: 9px 14px; font-size: 13.5px; }
-.btn-salir { color: var(--texto-suave); }
-.btn-salir:hover { color: var(--peligro); background: var(--peligro-fondo); }
 
 /* Formulario del lote (vendedor) */
 .modal-lote { max-width: 560px; }

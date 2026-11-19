@@ -29,7 +29,14 @@ export default function App() {
         marcarVendedorEnDireccion(vendedor);
     }
 
-    function salir() {
+    // "Soy vendedor" siempre pide usuario y contraseña
+    function entrarComoVendedor() {
+        cerrarSesion();
+        cambiarVista(true);
+    }
+
+    // "Volver a comprador" cierra la sesión: nadie queda con permisos en ese navegador
+    function volverAComprador() {
         cerrarSesion();
         cambiarVista(false);
     }
@@ -44,9 +51,8 @@ export default function App() {
                 total={total}
                 sesion={sesion}
                 modoVendedor={modoVendedor}
-                onVistaVendedor={() => cambiarVista(true)}
-                onVistaComprador={() => cambiarVista(false)}
-                onSalir={salir}
+                onSoyVendedor={entrarComoVendedor}
+                onVolverAComprador={volverAComprador}
             />
 
             {/* Aviso entre la barra y el mapa: no tapa los filtros ni la ficha */}

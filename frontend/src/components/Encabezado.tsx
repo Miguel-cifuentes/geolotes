@@ -1,20 +1,19 @@
 import { ESTADOS } from '../config/estados';
 import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
 import type { Sesion } from '../services/sesion';
-import { IconoCandado, IconoLlave, IconoSalir, IconoTelefono, IconoUbicacion, IconoUsuario } from './Iconos';
+import { IconoCandado, IconoLlave, IconoSalir, IconoTelefono, IconoUbicacion } from './Iconos';
 
 interface Props {
     disponibles: number;
     total: number;
     sesion: Sesion | null;
     modoVendedor: boolean;           // hay sesión y la persona está en la vista del vendedor
-    onVistaVendedor: () => void;     // "Soy vendedor" / "Modo vendedor"
-    onVistaComprador: () => void;    // vuelve a ver el mapa como comprador, sin cerrar la sesión
-    onSalir: () => void;             // cierra la sesión
+    onSoyVendedor: () => void;       // abre el inicio de sesión
+    onVolverAComprador: () => void;  // cierra la sesión y vuelve al mapa del comprador
 }
 
 export default function Encabezado({
-    disponibles, total, sesion, modoVendedor, onVistaVendedor, onVistaComprador, onSalir,
+    disponibles, total, sesion, modoVendedor, onSoyVendedor, onVolverAComprador,
 }: Props) {
     const contacto = enlaceWhatsapp(
         `Hola, quiero información sobre los lotes de ${PROYECTO.nombre} que vi en GeoLotes.`,
@@ -42,30 +41,31 @@ export default function Encabezado({
                     </span>
                 )}
                 {modoVendedor && sesion ? (
-                    // Vista del vendedor: su nombre, volver a comprador y cerrar sesión
+                    // Vista del vendedor: su nombre y el botón para volver a comprador (cierra la sesión)
                     <div className="barra-sesion">
                         <span className="barra-vendedor" title={`Sesión de ${sesion.usuario}`}>
                             <IconoCandado width={15} height={15} />
                             <span>{sesion.nombre}</span>
                         </span>
-                        <button className="btn-secundario btn-barra" onClick={onVistaComprador} aria-label="Ver como comprador">
-                            <IconoUsuario width={16} height={16} />
-                            <span>Ver como comprador</span>
-                        </button>
-                        <button className="btn-icono btn-salir" onClick={onSalir} aria-label="Cerrar sesión" title="Cerrar sesión">
-                            <IconoSalir width={18} height={18} />
+                        <button
+                            className="btn-secundario btn-barra"
+                            onClick={onVolverAComprador}
+                            aria-label="Volver a comprador y cerrar sesión"
+                        >
+                            <IconoSalir width={16} height={16} />
+                            <span>Volver a comprador</span>
                         </button>
                     </div>
                 ) : (
-                    // Vista del comprador: un acceso discreto para el vendedor y el contacto por WhatsApp
+                    // Vista del comprador: el acceso del vendedor y el contacto por WhatsApp
                     <>
                         <button
                             className="btn-secundario btn-barra"
-                            onClick={onVistaVendedor}
-                            aria-label={sesion ? 'Volver al modo vendedor' : 'Soy vendedor: iniciar sesión'}
+                            onClick={onSoyVendedor}
+                            aria-label="Soy vendedor: iniciar sesión"
                         >
                             <IconoLlave width={16} height={16} />
-                            <span>{sesion ? 'Modo vendedor' : 'Soy vendedor'}</span>
+                            <span>Soy vendedor</span>
                         </button>
                         <a
                             className="btn-primario btn-contacto"
