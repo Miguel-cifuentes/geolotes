@@ -206,6 +206,13 @@ button, input, select, textarea { font-family: inherit; }
 .leyenda-item b { font-variant-numeric: tabular-nums; color: var(--texto-suave); font-weight: 600; }
 .leyenda-color { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
 
+/* Aviso breve sobre el mapa (HU-02 c3: «Ese lote ya está vendido») */
+.aviso-mapa {
+  position: absolute; left: 50%; bottom: 84px; z-index: 2; transform: translateX(-50%);
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  background: var(--aviso-fondo); color: var(--aviso); border-color: var(--aviso-borde);
+}
+
 /* ---------- Ficha del lote ---------- */
 .panel {
   position: absolute; top: 16px; right: 56px; z-index: 3;
