@@ -41,7 +41,7 @@ export async function cambiarEstadoLote(id: string, estado: EstadoLote): Promise
 
 // ---------- Segmentación manual y videos (panel del vendedor) ----------
 
-export const TAMANO_MAXIMO_VIDEO = 300 * 1024 * 1024; // igual que application.yaml
+export { TAMANO_MAXIMO_VIDEO } from '../config/video';
 
 export interface DatosLote {
     manzana: string;
