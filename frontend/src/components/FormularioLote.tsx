@@ -4,10 +4,12 @@ import { createPortal } from 'react-dom';
 import type { EstadoLote, Lote, Punto } from '../types/lote';
 import { ESTADOS } from '../config/estados';
 import {
-    actualizarLote, crearLote, ErrorApi, quitarVideo, subirVideo, TAMANO_MAXIMO_VIDEO, urlVideo,
+    actualizarLote, crearLote, ErrorApi, quitarFoto360, quitarVideo, subirFoto360, subirVideo, TAMANO_MAXIMO_VIDEO,
+    urlFoto360, urlVideo,
 } from '../services/lotesApi';
+import { errorFoto360, esProporcion360, medirImagen } from '../utils/foto360';
 import { areaAproximada } from '../utils/geo';
-import { IconoAlerta, IconoCerrar, IconoVideo } from './Iconos';
+import { IconoAlerta, IconoCerrar, IconoFoto360, IconoVideo } from './Iconos';
 
 // Crear un lote recién dibujado, o editar los datos y el video de uno existente
 export type ModoFormulario = { tipo: 'crear'; puntos: Punto[] } | { tipo: 'editar'; lote: Lote };
@@ -72,9 +74,16 @@ export default function FormularioLote({ modo, onCerrar, onGuardado, onCambioPar
     const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
     const [guardando, setGuardando] = useState(false);
     const [progreso, setProgreso] = useState<number | null>(null);
+    const [subiendo, setSubiendo] = useState<'video' | 'foto 360°'>('video');
+    // Foto 360° (va aparte del video: un lote puede tener uno, otro o los dos)
+    const [foto, setFoto] = useState<File | null>(null);
+    const [quitarFoto, setQuitarFoto] = useState(false);
+    const [errorFoto, setErrorFoto] = useState<string | null>(null);
+    const [avisoFoto, setAvisoFoto] = useState<string | null>(null);
 
     const area = loteGuardado ? loteGuardado.areaM2 : modo.tipo === 'crear' ? areaAproximada(modo.puntos) : 0;
     const tieneVideo = Boolean(loteGuardado?.video) && !quitar;
+    const tieneFoto = Boolean(loteGuardado?.foto360) && !quitarFoto;
 
     function actualizar<K extends keyof Campos>(campo: K, valor: Campos[K]) {
         setCampos((anterior) => ({ ...anterior, [campo]: valor }));
@@ -86,12 +95,29 @@ export default function FormularioLote({ modo, onCerrar, onGuardado, onCambioPar
         setErrores((anteriores) => ({ ...anteriores, video: undefined }));
     }
 
+    async function elegirFoto(e: ChangeEvent<HTMLInputElement>) {
+        const elegida = e.target.files?.[0] ?? null;
+        setFoto(elegida);
+        setQuitarFoto(false);
+        setAvisoFoto(null);
+        setErrorFoto(elegida ? errorFoto360(elegida) : null);
+        if (!elegida || errorFoto360(elegida)) return;
+        try {
+            const { ancho, alto } = await medirImagen(elegida);
+            if (!esProporcion360(ancho, alto)) {
+                setAvisoFoto(`La foto mide ${ancho} × ${alto}. Una foto 360° completa mide el doble de ancho que de alto; esta puede verse deformada.`);
+            }
+        } catch {
+            setErrorFoto('No se pudo leer la imagen. Prueba exportarla de nuevo desde 360 Photo Cam.');
+        }
+    }
+
     async function guardar(e: FormEvent) {
         e.preventDefault();
         const nuevos = validar(campos, creando, archivo);
         setErrores(nuevos);
         setErrorGeneral(null);
-        if (Object.keys(nuevos).length > 0) return;
+        if (Object.keys(nuevos).length > 0 || errorFoto) return;
 
         setGuardando(true);
         let lote = loteGuardado;
@@ -119,20 +145,31 @@ export default function FormularioLote({ modo, onCerrar, onGuardado, onCambioPar
         }
         if (lote === null) return;
 
-        // 2. Video (es aparte: si falla, el lote ya quedó guardado)
+        // 2. Video y foto 360° (van aparte: si fallan, el lote ya quedó guardado)
+        let paso: 'el video' | 'la foto 360°' = 'el video';
         try {
             if (archivo) {
+                setSubiendo('video');
                 setProgreso(0);
                 lote = await subirVideo(lote.id, archivo, setProgreso);
+                setArchivo(null);
             } else if (quitar && lote.video) {
                 lote = await quitarVideo(lote.id);
+            }
+            paso = 'la foto 360°';
+            if (foto) {
+                setSubiendo('foto 360°');
+                setProgreso(0);
+                lote = await subirFoto360(lote.id, foto, setProgreso);
+            } else if (quitarFoto && lote.foto360) {
+                lote = await quitarFoto360(lote.id);
             }
             onGuardado(lote);
         } catch (error) {
             setLoteGuardado(lote);
             onCambioParcial(lote);
             const detalle = error instanceof ErrorApi ? error.message : 'Intenta de nuevo.';
-            setErrorGeneral(`El lote quedó guardado, pero el video no se pudo subir: ${detalle}`);
+            setErrorGeneral(`El lote quedó guardado, pero ${paso} no se pudo subir: ${detalle}`);
             setGuardando(false);
             setProgreso(null);
         }
@@ -270,10 +307,37 @@ export default function FormularioLote({ modo, onCerrar, onGuardado, onCambioPar
                         {errores.video && <span className="error">{errores.video}</span>}
                     </fieldset>
 
+                    <fieldset className="campo-video">
+                        <legend>Foto 360° del lote</legend>
+                        {tieneFoto && loteGuardado && !foto && (
+                            <div className="video-actual">
+                                <img src={urlFoto360(loteGuardado)} alt="Foto 360° actual del lote" loading="lazy" />
+                                <div>
+                                    <p>Este lote ya tiene foto 360°.</p>
+                                    <button type="button" className="btn-fantasma" onClick={() => setQuitarFoto(true)} disabled={guardando}>
+                                        Quitar foto 360°
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        {quitarFoto && <p className="campo-nota">La foto 360° se quitará al guardar.</p>}
+                        <label className="selector-video">
+                            <IconoFoto360 width={20} height={20} />
+                            <span>
+                                {foto
+                                    ? `${foto.name} · ${(foto.size / MB).toFixed(1)} MB`
+                                    : tieneFoto ? 'Reemplazar por otra foto 360°' : 'Elegir foto 360° (JPG de 360 Photo Cam, máx. 40 MB)'}
+                            </span>
+                            <input type="file" accept="image/jpeg,.jpg,.jpeg" onChange={elegirFoto} disabled={guardando} />
+                        </label>
+                        {errorFoto && <span className="error">{errorFoto}</span>}
+                        {avisoFoto && <p className="campo-nota">{avisoFoto}</p>}
+                    </fieldset>
+
                     {progreso !== null && (
                         <div className="progreso" role="progressbar" aria-valuenow={Math.round(progreso * 100)} aria-valuemin={0} aria-valuemax={100}>
                             <div className="progreso-barra" style={{ width: `${Math.round(progreso * 100)}%` }} />
-                            <span>{progreso < 1 ? `Subiendo video… ${Math.round(progreso * 100)} %` : 'Procesando video…'}</span>
+                            <span>{progreso < 1 ? `Subiendo ${subiendo}… ${Math.round(progreso * 100)} %` : `Procesando ${subiendo}…`}</span>
                         </div>
                     )}
 

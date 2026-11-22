@@ -98,9 +98,11 @@ public class LoteService {
     public void eliminar(String id) {
         Lote lote = buscar(id);
         String video = lote.getVideo();
+        String foto360 = lote.getFoto360();
         repositorio.delete(lote);
         repositorio.flush();
         videos.borrar(video);
+        videos.borrar(foto360);
     }
 
     // ---------- Video del lote ----------
@@ -138,6 +140,43 @@ public class LoteService {
             throw new LoteException(HttpStatus.NOT_FOUND, "Este lote no tiene video.");
         }
         return new VideoLote(videos.abrir(lote.getVideo()), videos.tipo(lote.getVideo()));
+    }
+
+    // ---------- Foto 360° del lote ----------
+
+    @Transactional
+    public LoteResponse subirFoto360(String id, MultipartFile archivo) {
+        Lote lote = buscar(id);
+        String anterior = lote.getFoto360();
+        String nueva = videos.guardarFoto360(lote.getId(), archivo);
+        try {
+            lote.setFoto360(nueva);
+            repositorio.flush();
+        } catch (RuntimeException e) {
+            videos.borrar(nueva); // si la base falla, no dejamos el archivo huérfano
+            throw e;
+        }
+        videos.borrar(anterior);
+        return LoteResponse.desde(lote);
+    }
+
+    @Transactional
+    public LoteResponse quitarFoto360(String id) {
+        Lote lote = buscar(id);
+        String anterior = lote.getFoto360();
+        lote.setFoto360(null);
+        repositorio.flush();
+        videos.borrar(anterior);
+        return LoteResponse.desde(lote);
+    }
+
+    @Transactional(readOnly = true)
+    public VideoLote obtenerFoto360(String id) {
+        Lote lote = buscar(id);
+        if (lote.getFoto360() == null) {
+            throw new LoteException(HttpStatus.NOT_FOUND, "Este lote no tiene foto 360°.");
+        }
+        return new VideoLote(videos.abrir(lote.getFoto360()), videos.tipo(lote.getFoto360()));
     }
 
     // ---------- Apoyo ----------

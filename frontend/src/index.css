@@ -385,6 +385,36 @@ button, input, select, textarea { font-family: inherit; }
 }
 .exito p { margin: 0; color: var(--texto-suave); line-height: 1.6; }
 
+/* Visor de foto 360° en la ficha del lote */
+.vista360 {
+  position: relative; width: 100%; aspect-ratio: 16 / 10; margin: 4px 0 14px;
+  border-radius: 12px; overflow: hidden; background: #0f1a14;
+}
+.vista360 canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; outline: none; }
+.vista360 canvas:active { cursor: grabbing; }
+.vista360 canvas:focus-visible { box-shadow: inset 0 0 0 3px var(--verde-marca); }
+.vista360:fullscreen { border-radius: 0; aspect-ratio: auto; }
+.vista360-aviso {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 16px;
+  color: #e8efe9; font-size: 13px; text-align: center;
+}
+.vista360-etiqueta {
+  position: absolute; top: 10px; left: 10px; padding: 3px 9px; border-radius: 999px;
+  background: rgba(15, 26, 20, .72); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  pointer-events: none;
+}
+.vista360-pista {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 12px;
+  border-radius: 999px; background: rgba(15, 26, 20, .72); color: #fff; font-size: 12.5px; white-space: nowrap;
+  pointer-events: none;
+}
+.vista360-completa {
+  position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 34px; height: 34px;
+  border: 0; border-radius: 8px; background: rgba(15, 26, 20, .72); color: #fff; cursor: pointer;
+}
+.vista360-completa:hover { background: rgba(15, 26, 20, .9); }
+.video-actual img { width: 120px; height: 60px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+
 /* Inicio de sesión del vendedor */
 .modal-sesion { max-width: 400px; }
 .sesion-icono {

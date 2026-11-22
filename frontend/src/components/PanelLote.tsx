@@ -5,7 +5,8 @@ import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
 import { formatoPesos } from '../utils/formato';
 import FormularioVisita from './FormularioVisita';
 import AccionesVendedor from './AccionesVendedor';
-import { urlVideo } from '../services/lotesApi';
+import { urlFoto360, urlVideo } from '../services/lotesApi';
+import Vista360 from './Vista360';
 import {
     IconoArea, IconoCalendario, IconoCerrar, IconoCheck, IconoCompartir, IconoGrafica, IconoInfo, IconoMensaje,
 } from './Iconos';
@@ -80,7 +81,12 @@ export default function PanelLote({
                 <h2>Lote {lote.numero}</h2>
             </div>
 
-            {/* Video del lote: reemplaza la vista de calle. key: si cambia el video, el reproductor se reinicia */}
+            {/* Foto 360°: el comprador mira el terreno desde adentro. key: si cambia la foto, el visor se reinicia */}
+            {lote.foto360 && (
+                <Vista360 key={lote.foto360} src={urlFoto360(lote)} titulo={`el lote ${lote.numero} de la manzana ${lote.manzana}`} />
+            )}
+
+            {/* Video del lote. key: si cambia el video, el reproductor se reinicia */}
             {lote.video && (
                 <video
                     key={lote.video}

@@ -133,11 +133,24 @@ export async function quitarVideo(id: string): Promise<Lote> {
     return (await respuesta.json()) as Lote;
 }
 
-// Sube el video con XMLHttpRequest porque fetch no informa el avance de la subida
+export async function quitarFoto360(id: string): Promise<Lote> {
+    const respuesta = await enviar(`${urlLote(id)}/foto360`, 'DELETE');
+    return (await respuesta.json()) as Lote;
+}
+
 export function subirVideo(id: string, archivo: File, onProgreso: (fraccion: number) => void): Promise<Lote> {
+    return subirArchivo(`${urlLote(id)}/video`, archivo, onProgreso, 'Se perdió la conexión mientras subía el video.');
+}
+
+export function subirFoto360(id: string, archivo: File, onProgreso: (fraccion: number) => void): Promise<Lote> {
+    return subirArchivo(`${urlLote(id)}/foto360`, archivo, onProgreso, 'Se perdió la conexión mientras subía la foto 360°.');
+}
+
+// Sube un archivo con XMLHttpRequest porque fetch no informa el avance de la subida
+function subirArchivo(ruta: string, archivo: File, onProgreso: (fraccion: number) => void, sinConexion: string): Promise<Lote> {
     return new Promise((resolver, rechazar) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${urlLote(id)}/video`);
+        xhr.open('POST', ruta);
         for (const [nombre, valor] of Object.entries(encabezadoAutorizacion())) xhr.setRequestHeader(nombre, valor);
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) onProgreso(e.loaded / e.total);
@@ -152,7 +165,7 @@ export function subirVideo(id: string, archivo: File, onProgreso: (fraccion: num
             if (xhr.status >= 200 && xhr.status < 300) resolver(cuerpo as Lote);
             else rechazar(errorDesde(xhr.status, cuerpo as CuerpoError));
         };
-        xhr.onerror = () => rechazar(new ErrorApi(0, 'Se perdió la conexión mientras subía el video.'));
+        xhr.onerror = () => rechazar(new ErrorApi(0, sinConexion));
         const formulario = new FormData();
         formulario.append('archivo', archivo);
         xhr.send(formulario);
@@ -162,4 +175,9 @@ export function subirVideo(id: string, archivo: File, onProgreso: (fraccion: num
 // Dirección del video. ?v= cambia cuando se reemplaza el video, así el navegador no usa el viejo.
 export function urlVideo(lote: Pick<Lote, 'id' | 'video'>): string {
     return `${urlLote(lote.id)}/video?v=${encodeURIComponent(lote.video ?? '')}`;
+}
+
+// Dirección de la foto 360°, con el mismo truco de ?v= para no mostrar una foto reemplazada
+export function urlFoto360(lote: Pick<Lote, 'id' | 'foto360'>): string {
+    return `${urlLote(lote.id)}/foto360?v=${encodeURIComponent(lote.foto360 ?? '')}`;
 }
