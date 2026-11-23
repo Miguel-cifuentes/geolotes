@@ -1,32 +1,31 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Respaldo: con SIN_GATEWAY=1 Vite va directo a cada servicio, como antes de tener el Gateway.
+// PowerShell:  $env:SIN_GATEWAY=1; npm run dev     (para volver: cierra la terminal o $env:SIN_GATEWAY=$null)
+const SIN_GATEWAY = process.env.SIN_GATEWAY === '1'
+
+const quitarApi = (ruta: string) => ruta.replace(/^\/api/, '')
+
+const proxy = SIN_GATEWAY
+  ? {
+      '/api/lotes': { target: 'http://localhost:8081', rewrite: quitarApi },
+      '/api/auth': { target: 'http://localhost:8081', rewrite: quitarApi },
+      '/api/visitas': { target: 'http://localhost:8082', rewrite: quitarApi },
+    }
+  : {
+      // Todo /api pasa por el API Gateway, que decide el servicio y quita el prefijo /api
+      '/api': { target: 'http://localhost:8080' },
+    }
+
 export default defineConfig({
   plugins: [react()],
   // Lee el .env desde la raíz del monorepo (geolotes/.env)
   envDir: '..',
-  server: {
-    // Proxy de desarrollo: imita al API Gateway.
-    // El frontend siempre pide /api/lotes; Vite lo reenvía a lotes-service (/lotes).
-    // Cuando el Gateway exista, solo cambia el destino a http://localhost:8080
-    proxy: {
-      '/api/lotes': {
-        target: 'http://localhost:8081',
-        rewrite: (ruta) => ruta.replace(/^\/api/, ''),
-      },
-      // El inicio de sesión del vendedor lo atiende lotes-service
-      '/api/auth': {
-        target: 'http://localhost:8081',
-        rewrite: (ruta) => ruta.replace(/^\/api/, ''),
-      },
-      '/api/visitas': {
-        target: 'http://localhost:8082',
-        rewrite: (ruta) => ruta.replace(/^\/api/, ''),
-      },
-    },
-  },
-  // npm run preview: acepta el enlace público del túnel de Cloudflare
+  server: { proxy },
+  // npm run preview usa el mismo proxy; acepta el enlace público del túnel de Cloudflare
   preview: {
+    proxy,
     allowedHosts: ['.trycloudflare.com'],
   },
 })
