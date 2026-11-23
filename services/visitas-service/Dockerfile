@@ -1,0 +1,13 @@
+# Imagen en dos etapas: compila con Maven y ejecuta solo el .jar con Java 21
+FROM maven:3.9-eclipse-temurin-21 AS compilacion
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
+COPY src ./src
+RUN mvn -q -B package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=compilacion /app/target/*.jar app.jar
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "app.jar"]
