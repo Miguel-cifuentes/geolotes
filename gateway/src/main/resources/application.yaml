@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 3000        # ms para conectar con un servicio
+            response-timeout: 120s       # subir un video de 300 MB puede tardar
+
+# Dónde están los servicios. En IntelliJ sirven los valores por defecto;
+# Docker Compose los cambia por los nombres de los contenedores.
+geolotes:
+  servicios:
+    lotes: ${LOTES_URL:http://localhost:8081}
+    visitas: ${VISITAS_URL:http://localhost:8082}

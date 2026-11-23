@@ -1,0 +1,24 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: visitas-service
+  datasource:
+    url: jdbc:postgresql://${VISITAS_DB_HOST:localhost}:${VISITAS_DB_PORT:5433}/visitas_db
+    # Spring no lee el .env; usa estos valores por defecto. Deben coincidir con tu .env
+    username: ${POSTGRES_USER:geolotes}
+    password: ${POSTGRES_PASSWORD:geolotes123}
+  jpa:
+    hibernate:
+      ddl-auto: update   # crea/actualiza las tablas automáticamente (solo para desarrollo)
+    open-in-view: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+geolotes:
+  auth:
+    # El MISMO secreto de lotes-service: así se verifican aquí los tokens que emite el login
+    secreto: ${JWT_SECRETO:geolotes-secreto-de-desarrollo-cambiar-en-produccion}
