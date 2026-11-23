@@ -1,7 +1,7 @@
 import { ESTADOS } from '../config/estados';
 import { PROYECTO, enlaceWhatsapp } from '../config/proyecto';
 import type { Sesion } from '../services/sesion';
-import { IconoCandado, IconoLlave, IconoSalir, IconoTelefono, IconoUbicacion } from './Iconos';
+import { IconoCalendario, IconoCandado, IconoLlave, IconoSalir, IconoTelefono, IconoUbicacion } from './Iconos';
 
 interface Props {
     disponibles: number;
@@ -10,10 +10,12 @@ interface Props {
     modoVendedor: boolean;           // hay sesión y la persona está en la vista del vendedor
     onSoyVendedor: () => void;       // abre el inicio de sesión
     onVolverAComprador: () => void;  // cierra la sesión y vuelve al mapa del comprador
+    visitasPendientes: number | null; // número en el botón "Visitas"; null mientras se consulta
+    onVerVisitas: () => void;         // abre el panel de visitas agendadas
 }
 
 export default function Encabezado({
-    disponibles, total, sesion, modoVendedor, onSoyVendedor, onVolverAComprador,
+    disponibles, total, sesion, modoVendedor, onSoyVendedor, onVolverAComprador, visitasPendientes, onVerVisitas,
 }: Props) {
     const contacto = enlaceWhatsapp(
         `Hola, quiero información sobre los lotes de ${PROYECTO.nombre} que vi en GeoLotes.`,
@@ -47,6 +49,15 @@ export default function Encabezado({
                             <IconoCandado width={15} height={15} />
                             <span>{sesion.nombre}</span>
                         </span>
+                        <button
+                            className="btn-secundario btn-barra btn-visitas"
+                            onClick={onVerVisitas}
+                            aria-label={`Visitas agendadas${visitasPendientes ? `: ${visitasPendientes} pendientes` : ''}`}
+                        >
+                            <IconoCalendario width={16} height={16} />
+                            <span>Visitas</span>
+                            {visitasPendientes ? <b className="insignia">{visitasPendientes}</b> : null}
+                        </button>
                         <button
                             className="btn-secundario btn-barra"
                             onClick={onVolverAComprador}

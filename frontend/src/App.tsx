@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import VistaMapa from './components/VistaMapa';
 import Encabezado from './components/Encabezado';
 import { AvisoCopia, Cargando, ErrorCarga } from './components/EstadosCarga';
 import InicioSesion from './components/InicioSesion';
+import PanelVisitas from './components/PanelVisitas';
 import { useLotes } from './hooks/useLotes';
 import { useSesion } from './hooks/useSesion';
 import { cerrarSesion } from './services/sesion';
+import { listarVisitas } from './services/visitasApi';
 
 // ?vendedor en la dirección abre la vista del vendedor (así una recarga no lo devuelve a comprador)
 const pideVendedor = () => new URLSearchParams(window.location.search).has('vendedor');
@@ -23,6 +25,26 @@ export default function App() {
     // Vista que eligió la persona. Las herramientas solo aparecen si además hay sesión.
     const [vistaVendedor, setVistaVendedor] = useState(pideVendedor);
     const modoVendedor = vistaVendedor && sesion !== null;
+    const [verVisitas, setVerVisitas] = useState(false);
+    const [visitasPendientes, setVisitasPendientes] = useState<number | null>(null);
+
+    // Al entrar como vendedor se consulta cuántas visitas esperan confirmación
+    useEffect(() => {
+        if (!modoVendedor) {
+            setVerVisitas(false);
+            setVisitasPendientes(null);
+            return;
+        }
+        let vigente = true;
+        listarVisitas('PENDIENTE')
+            .then((lista) => vigente && setVisitasPendientes(lista.length))
+            .catch(() => vigente && setVisitasPendientes(null)); // sin visitas-service el botón sigue funcionando
+        return () => {
+            vigente = false;
+        };
+    }, [modoVendedor]);
+
+    const actualizarPendientes = useCallback((cantidad: number) => setVisitasPendientes(cantidad), []);
 
     function cambiarVista(vendedor: boolean) {
         setVistaVendedor(vendedor);
@@ -53,6 +75,8 @@ export default function App() {
                 modoVendedor={modoVendedor}
                 onSoyVendedor={entrarComoVendedor}
                 onVolverAComprador={volverAComprador}
+                visitasPendientes={visitasPendientes}
+                onVerVisitas={() => setVerVisitas(true)}
             />
 
             {/* Aviso entre la barra y el mapa: no tapa los filtros ni la ficha */}
@@ -78,6 +102,14 @@ export default function App() {
 
             {/* "Soy vendedor" sin sesión pide el ingreso; si la sesión vence, la ventana vuelve a aparecer */}
             {vistaVendedor && !sesion && <InicioSesion onCerrar={() => cambiarVista(false)} />}
+
+            {modoVendedor && verVisitas && (
+                <PanelVisitas
+                    lotes={lotes?.features.map((f) => f.properties) ?? []}
+                    onCerrar={() => setVerVisitas(false)}
+                    onPendientes={actualizarPendientes}
+                />
+            )}
         </div>
     );
 }

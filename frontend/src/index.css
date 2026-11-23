@@ -392,6 +392,44 @@ button, input, select, textarea { font-family: inherit; }
 }
 .exito p { margin: 0; color: var(--texto-suave); line-height: 1.6; }
 
+/* Visitas agendadas (panel del vendedor) */
+.btn-visitas { position: relative; }
+.insignia {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 2px;
+  border-radius: 999px; background: var(--verde-marca); color: #fff; font-size: 11.5px; font-weight: 700;
+}
+.modal-visitas { max-width: 760px; }
+.visitas-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.visitas-pestanas { display: flex; gap: 6px; flex-wrap: wrap; }
+.visitas-pestana {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--borde); background: var(--fondo-tarjeta); color: var(--texto-suave);
+  font: 600 13px var(--fuente); cursor: pointer;
+}
+.visitas-pestana:hover { border-color: var(--verde-borde); color: var(--texto); }
+.visitas-pestana.activa { background: var(--verde-marca); border-color: var(--verde-marca); color: #fff; }
+.visitas-cuenta { font-size: 11.5px; opacity: .8; font-variant-numeric: tabular-nums; }
+.visitas-vacio { margin: 24px 0; text-align: center; color: var(--texto-suave); font-size: 14px; }
+.visitas-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.visita { padding: 14px 16px; border: 1px solid var(--borde); border-radius: var(--radio-sm); background: var(--fondo-tarjeta); }
+.visita-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.visita h3 { margin: 0; font-size: 15.5px; color: var(--texto); }
+.visita-lote { margin: 2px 0 0; font-size: 13px; color: var(--texto-suave); }
+.visita-estado { flex-shrink: 0; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.estado-pendiente { background: var(--aviso-fondo); color: var(--aviso); border: 1px solid var(--aviso-borde); }
+.estado-confirmada { background: var(--verde-suave); color: var(--verde-marca); border: 1px solid var(--verde-borde); }
+.estado-realizada { background: #EEF2F7; color: #344054; border: 1px solid #D0D5DD; }
+.estado-cancelada { background: var(--peligro-fondo); color: var(--peligro); border: 1px solid #F6CFCB; }
+.visita-fecha { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 14px; font-weight: 600; color: var(--texto); }
+.visita-pasada { margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--peligro-fondo); color: var(--peligro); font-size: 11.5px; }
+.visita-mensaje { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--texto-suave); }
+.visita-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.visita-contacto { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.visita-contacto .btn-fantasma { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.visita-correo { padding: 0 10px; font-size: 13px; color: var(--texto-suave); }
+.visita-acciones { display: flex; align-items: center; gap: 8px; }
+.modal .visita-acciones button { width: auto; margin: 0; min-height: 0; height: auto; padding: 8px 14px; font-size: 13.5px; line-height: 1.2; }
+
 /* Visor de foto 360° en la ficha del lote */
 .vista360 {
   /* flex-shrink: 0 y min-height: la ficha es una columna que se encoge y aplastaba el visor */
