@@ -29,7 +29,8 @@ public interface LoteRepository extends JpaRepository<Lote, String> {
                             'precio', precio,
                             'estado', estado,
                             'descripcion', descripcion,
-                            'video', video
+                            'video', video,
+                            'foto360', foto360
                         )
                     ) ORDER BY manzana, numero
                 ), CAST('[]' AS json))

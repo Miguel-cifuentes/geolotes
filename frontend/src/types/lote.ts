@@ -12,6 +12,7 @@ export interface Lote {
     estado: EstadoLote;
     descripcion: string;
     video?: string | null; // nombre del archivo de video; vacío si el lote no tiene
+    foto360?: string | null; // nombre de la foto 360° (JPG equirectangular); vacío si no tiene
 }
 
 // Un punto del mapa: [longitud, latitud]

@@ -40,7 +40,7 @@ export default function AccionesVendedor({ lote, onEstadoCambiado, onEditarDatos
             <div className="vendedor-acciones">
                 <button className="btn-secundario btn-pequeno" onClick={onEditarDatos}>
                     <IconoLapiz width={15} height={15} />
-                    Datos y video
+                    Datos, video y 360°
                 </button>
                 <button className="btn-secundario btn-pequeno" onClick={onEditarForma}>
                     <IconoArea width={15} height={15} />
@@ -50,7 +50,7 @@ export default function AccionesVendedor({ lote, onEstadoCambiado, onEditarDatos
 
             {confirmando ? (
                 <div className="confirmar" role="alertdialog" aria-label="Confirmar eliminación">
-                    <p>¿Eliminar el lote {lote.numero} de la manzana {lote.manzana}? También se borra su video. No se puede deshacer.</p>
+                    <p>¿Eliminar el lote {lote.numero} de la manzana {lote.manzana}? También se borran su video y su foto 360°. No se puede deshacer.</p>
                     <div className="confirmar-botones">
                         <button className="btn-peligro btn-pequeno" onClick={eliminar} disabled={eliminando}>
                             {eliminando ? 'Eliminando…' : 'Sí, eliminar'}
