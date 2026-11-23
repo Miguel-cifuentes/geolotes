@@ -250,7 +250,9 @@ export default function Vista360({ src, titulo }: Props) {
             canvas.removeEventListener('keydown', alTeclado);
             canvas.removeEventListener('webglcontextlost', contextoPerdido);
             imagen.onload = null;
-            gl.getExtension('WEBGL_lose_context')?.loseContext();
+            // No se llama a loseContext(): en desarrollo React (StrictMode) desmonta y vuelve a montar
+            // el componente sobre el MISMO lienzo, y un contexto perdido ya no dibuja. Al quitar el
+            // lienzo de la página, el navegador libera el contexto solo.
         };
     }, [src]);
 
