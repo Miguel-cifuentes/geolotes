@@ -11,3 +11,19 @@ export interface SolicitudVisita {
     mensaje: string;
     aceptaTratamientoDatos: boolean;
 }
+// ---------- Lo que ve el vendedor ----------
+export type EstadoVisita = 'PENDIENTE' | 'CONFIRMADA' | 'REALIZADA' | 'CANCELADA';
+
+// Una solicitud tal como la devuelve visitas-service (GET /visitas)
+export interface Visita {
+    id: string;
+    loteId: string;
+    nombre: string;
+    telefono: string;
+    correo: string | null;
+    fechaPreferida: string; // YYYY-MM-DD
+    franja: FranjaHoraria;
+    mensaje: string | null;
+    estado: EstadoVisita;
+    fechaCreacion: string;  // instante ISO
+}
