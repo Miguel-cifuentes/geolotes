@@ -10,6 +10,7 @@ import FormularioLote from './FormularioLote';
 import type { ModoFormulario } from './FormularioLote';
 import { calcularRangos, cumpleFiltros, filtrosIniciales } from '../utils/filtros';
 import { esquinasLote } from '../utils/geo';
+import { alTocarLote } from '../utils/seleccion';
 import { actualizarForma, ErrorApi } from '../services/lotesApi';
 import type { Lote, Punto } from '../types/lote';
 import type { Filtros } from '../types/filtros';
@@ -41,6 +42,14 @@ export default function VistaMapa({ lotes, modoVendedor, onLoteActualizado, onRe
     const [formulario, setFormulario] = useState<ModoFormulario | null>(null);
     const [guardandoForma, setGuardandoForma] = useState(false);
     const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
+    const [aviso, setAviso] = useState<string | null>(null);
+
+    // El aviso (por ejemplo, «Ese lote ya está vendido») se borra solo a los 3 segundos
+    useEffect(() => {
+        if (!aviso) return;
+        const temporizador = setTimeout(() => setAviso(null), 3000);
+        return () => clearTimeout(temporizador);
+    }, [aviso]);
 
     // Mantener la dirección al día sin recargar la página
     useEffect(() => {
@@ -69,6 +78,15 @@ export default function VistaMapa({ lotes, modoVendedor, onLoteActualizado, onRe
             // Si la recarga falla, el mapa sigue con los datos anteriores
         }
         setSeleccionId(seleccionar);
+    }
+
+    // HU-02 c3: el comprador no abre la ficha de un lote vendido; se le avisa
+    function tocarLote(id: string) {
+        const lote = lotes.features.find((f) => f.properties.id === id)?.properties;
+        if (!lote) return;
+        const resultado = alTocarLote(lote, modoVendedor);
+        setAviso(resultado.aviso);
+        if (resultado.abrirFicha) setSeleccionId(id);
     }
 
     // ---------- Segmentación ----------
@@ -140,7 +158,7 @@ export default function VistaMapa({ lotes, modoVendedor, onLoteActualizado, onRe
                 lotes={lotes}
                 filtros={filtros}
                 loteSeleccionadoId={loteSeleccionado?.id ?? null}
-                onSeleccionar={setSeleccionId}
+                onSeleccionar={tocarLote}
                 dibujo={edicion}
                 onAgregarPunto={agregarPunto}
                 onMoverPunto={moverPunto}
@@ -154,6 +172,12 @@ export default function VistaMapa({ lotes, modoVendedor, onLoteActualizado, onRe
                 onLimpiar={() => setFiltros(filtrosIniciales(rangos))}
             />
             <Leyenda lotes={lotes} />
+
+            {aviso && (
+                <div className="aviso-mapa tarjeta-flotante" role="status">
+                    {aviso}
+                </div>
+            )}
 
             {modoVendedor && (
                 <HerramientasVendedor
