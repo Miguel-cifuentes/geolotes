@@ -33,6 +33,10 @@ public class Lote {
     @Column(length = 120)
     private String video;
 
+    // Nombre del archivo de la foto 360° (equirectangular JPG); null si no tiene
+    @Column(length = 120)
+    private String foto360;
+
     // La columna "geom" (el polígono) existe en la tabla pero NO se mapea aquí:
     // PostGIS la lee directamente al generar el GeoJSON (ver LoteRepository).
 
@@ -63,9 +67,11 @@ public class Lote {
     public Instant getActualizadoEn() { return actualizadoEn; }
 
     public String getVideo() { return video; }
+    public String getFoto360() { return foto360; }
 
     public void setEstado(EstadoLote estado) { this.estado = estado; }
     public void setPrecio(Long precio) { this.precio = precio; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
     public void setVideo(String video) { this.video = video; }
+    public void setFoto360(String foto360) { this.foto360 = foto360; }
 }
