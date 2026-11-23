@@ -60,13 +60,21 @@ export default function Vista360({ src, titulo }: Props) {
             const s = gl.createShader(tipo)!;
             gl.shaderSource(s, fuente);
             gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error('[Vista360] shader:', gl.getShaderInfoLog(s));
             return s;
         };
         const programa = gl.createProgram()!;
         gl.attachShader(programa, compilar(gl.VERTEX_SHADER, VERTICES));
         gl.attachShader(programa, compilar(gl.FRAGMENT_SHADER, FRAGMENTOS));
         gl.linkProgram(programa);
+        if (!gl.getProgramParameter(programa, gl.LINK_STATUS)) {
+            // La tarjeta gráfica no aceptó el programa: mejor un aviso que un recuadro en blanco
+            console.error('[Vista360] programa:', gl.getProgramInfoLog(programa));
+            setEstado('error');
+            return;
+        }
         gl.useProgram(programa);
+        gl.clearColor(0.06, 0.1, 0.08, 1);
         const buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); // un triángulo cubre la pantalla
@@ -95,12 +103,16 @@ export default function Vista360({ src, titulo }: Props) {
                 canvas.width = ancho;
                 canvas.height = alto;
             }
+            if (ancho === 0 || alto === 0) return; // todavía sin tamaño: el ResizeObserver vuelve a llamar
             gl.viewport(0, 0, ancho, alto);
+            gl.clear(gl.COLOR_BUFFER_BIT);
             gl.uniform1f(u.giro, vista.giro);
             gl.uniform1f(u.inclina, vista.inclina);
             gl.uniform1f(u.tanMedia, Math.tan(((vista.campo * Math.PI) / 180) / 2));
             gl.uniform1f(u.aspecto, ancho / Math.max(alto, 1));
             gl.drawArrays(gl.TRIANGLES, 0, 3);
+            const fallo = gl.getError();
+            if (fallo !== gl.NO_ERROR) console.error('[Vista360] error de WebGL al dibujar:', fallo);
             if (vista.auto) {
                 vista.giro += 0.0015;
                 pedirCuadro();
@@ -114,6 +126,10 @@ export default function Vista360({ src, titulo }: Props) {
         const imagen = new Image();
         imagen.decoding = 'async';
         imagen.onload = () => {
+            if (!imagen.naturalWidth) {
+                setEstado('error');
+                return;
+            }
             // Los celulares no aceptan texturas muy grandes: si la foto pasa del máximo, se reduce
             const maximo = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE) as number, 8192);
             let fuente: TexImageSource = imagen;
@@ -132,11 +148,21 @@ export default function Vista360({ src, titulo }: Props) {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            console.info(`[Vista360] foto ${imagen.naturalWidth}×${imagen.naturalHeight}, máximo de textura ${maximo}`);
             lista = true;
             setEstado('lista');
             pedirCuadro();
         };
-        imagen.onerror = () => setEstado('error');
+        imagen.onerror = () => {
+            console.error('[Vista360] no se pudo cargar la foto:', src);
+            setEstado('error');
+        };
+        const contextoPerdido = (e: Event) => {
+            e.preventDefault();
+            console.error('[Vista360] la tarjeta gráfica cerró el contexto de WebGL');
+            setEstado('error');
+        };
+        canvas.addEventListener('webglcontextlost', contextoPerdido);
         imagen.src = src;
 
         // ---------- interacción ----------
@@ -222,6 +248,7 @@ export default function Vista360({ src, titulo }: Props) {
             canvas.removeEventListener('pointercancel', alSoltar);
             canvas.removeEventListener('wheel', alRueda);
             canvas.removeEventListener('keydown', alTeclado);
+            canvas.removeEventListener('webglcontextlost', contextoPerdido);
             imagen.onload = null;
             gl.getExtension('WEBGL_lose_context')?.loseContext();
         };
