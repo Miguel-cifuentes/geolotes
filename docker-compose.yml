@@ -1,3 +1,11 @@
+# Uso diario (como siempre): solo las bases de datos; los servicios se corren en IntelliJ
+#   docker compose up -d
+#
+# Todo en contenedores (bases + lotes-service + visitas-service + gateway):
+#   docker compose --profile completo up -d --build
+#   Antes, detén los servicios de IntelliJ para liberar los puertos 8080, 8081 y 8082.
+#   El frontend sigue con "npm run dev" y entra por el gateway en el 8080.
+
 services:
   lotes-db:
     image: postgis/postgis:16-3.4      # PostgreSQL con la extensión espacial PostGIS
@@ -10,6 +18,10 @@ services:
       - "5434:5432"
     volumes:
       - lotes-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d lotes_db"]
+      interval: 5s
+      retries: 10
 
   visitas-db:
     image: postgres:16
@@ -22,7 +34,63 @@ services:
       - "5433:5432"
     volumes:
       - visitas-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d visitas_db"]
+      interval: 5s
+      retries: 10
+
+  # ---------- Perfil "completo": los servicios también en contenedores ----------
+  lotes-service:
+    profiles: ["completo"]
+    build: ./services/lotes-service
+    container_name: geolotes-lotes-service
+    depends_on:
+      lotes-db:
+        condition: service_healthy
+    environment:
+      LOTES_DB_HOST: lotes-db
+      LOTES_DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      VIDEOS_DIR: /data/videos
+      JWT_SECRETO: ${JWT_SECRETO}
+      VENDEDOR_USUARIO: ${VENDEDOR_USUARIO:-vendedor}
+      VENDEDOR_CLAVE: ${VENDEDOR_CLAVE}
+    ports:
+      - "8081:8081"
+    volumes:
+      - videos-data:/data/videos       # videos y fotos 360°: sobreviven a reinicios del contenedor
+
+  visitas-service:
+    profiles: ["completo"]
+    build: ./services/visitas-service
+    container_name: geolotes-visitas-service
+    depends_on:
+      visitas-db:
+        condition: service_healthy
+    environment:
+      VISITAS_DB_HOST: visitas-db
+      VISITAS_DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRETO: ${JWT_SECRETO}       # el mismo de lotes-service: así verifica el token del vendedor
+    ports:
+      - "8082:8082"
+
+  gateway:
+    profiles: ["completo"]
+    build: ./gateway
+    container_name: geolotes-gateway
+    depends_on:
+      - lotes-service
+      - visitas-service
+    environment:
+      LOTES_URL: http://lotes-service:8081
+      VISITAS_URL: http://visitas-service:8082
+    ports:
+      - "8080:8080"
 
 volumes:
   lotes-data:
   visitas-data:
+  videos-data:
