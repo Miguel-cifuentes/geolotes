@@ -325,7 +325,7 @@ export default function FormularioLote({ modo, onCerrar, onGuardado, onCambioPar
                             <IconoFoto360 width={20} height={20} />
                             <span>
                                 {foto
-                                    ? `${foto.name} · ${(foto.size / MB).toFixed(1)} MB`
+                                    ? `${foto.name} · ${foto.size < MB ? `${Math.max(1, Math.round(foto.size / 1024))} KB` : `${(foto.size / MB).toFixed(1)} MB`}`
                                     : tieneFoto ? 'Reemplazar por otra foto 360°' : 'Elegir foto 360° (JPG de 360 Photo Cam, máx. 40 MB)'}
                             </span>
                             <input type="file" accept="image/jpeg,.jpg,.jpeg" onChange={elegirFoto} disabled={guardando} />
